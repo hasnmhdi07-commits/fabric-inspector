@@ -19,3 +19,6 @@ __pycache__/
 results/reports/
 server/spike_result.json
 .vercel/
+
+.vercel
+.env*

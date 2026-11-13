@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="paper">#FFFFFF</color>
+    <color name="surface">#F6F9F5</color>
+    <color name="ink">#15211A</color>
+    <color name="ink2">#4D5C52</color>
+    <color name="line">#DDE6DA</color>
+    <color name="fern">#2F7D3B</color>
+    <color name="fern_swatch">#63B96C</color>
+
+    <!-- single light "fern" theme on purpose (spec v2, section 6) -->
+    <style name="AppTheme" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:colorPrimary">@color/fern</item>
+        <item name="android:colorAccent">@color/fern</item>
+        <item name="android:windowBackground">@color/surface</item>
+        <item name="android:statusBarColor">@color/surface</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:navigationBarColor">@color/surface</item>
+        <item name="android:textColorPrimary">@color/ink</item>
+    </style>
+</resources>

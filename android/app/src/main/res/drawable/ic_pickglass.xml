@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The pick glass: thread-counting lens with a 5 mm reticle and a chalk-yellow handle (foreground of the app icon) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <group android:translateX="27" android:translateY="27">
+        <path android:pathData="M27,27m-17,0a17,17 0,1 1,34 0a17,17 0,1 1,-34 0" android:fillColor="#1AFFFFFF"
+            android:strokeColor="#FFFFFF" android:strokeWidth="2.4" />
+        <path android:pathData="M14,27h26M27,14v26" android:strokeColor="#8CFFFFFF" android:strokeWidth="1" />
+        <path android:pathData="M17,27v-5M21,27v-3M25,27v-3M29,27v-3M33,27v-3M37,27v-5" android:strokeColor="#FFFFFF" android:strokeWidth="1.1" />
+        <path android:pathData="M39.5,39.5l6,6" android:strokeColor="#F0BF45" android:strokeWidth="4" android:strokeLineCap="round" />
+    </group>
+</vector>

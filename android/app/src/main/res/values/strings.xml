@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Fabric Inspector</string>
+    <string name="intro">A floating bubble checks fabric shown anywhere on the screen: the camera, a photo, WhatsApp or a PDF. Tap the bubble, drag the corners over the fabric and tap Analyse area.</string>
+    <string name="start">Start the bubble</string>
+    <string name="stop">Stop the bubble</string>
+    <string name="running">The bubble is on. Open any app that shows fabric and tap the bubble.</string>
+    <string name="stopped">The bubble is off.</string>
+    <string name="step_overlay">Step 1 of 2: allow “Display over other apps” for Fabric Inspector, then come back and tap Start again.</string>
+    <string name="step_capture">Step 2 of 2: allow screen capture. Android asks this each time the bubble is started.</string>
+    <string name="capture_denied">Screen capture was not allowed, so the bubble cannot see the fabric. Tap Start and choose Allow.</string>
+    <string name="checks">Extra checks</string>
+    <string name="shade">Shade ΔE</string>
+    <string name="skew">Bow / skew</string>
+    <string name="checks_hint">Only for flat fabric photographed straight from above in even light.</string>
+    <string name="privacy">The selected area is analysed on the server and not stored.</string>
+    <string name="notif_channel">Fabric Inspector bubble</string>
+    <string name="notif_title">Fabric Inspector bubble is on</string>
+    <string name="notif_text">Tap the bubble to check fabric on the screen.</string>
+    <string name="select_hint">Drag the corners over the fabric</string>
+    <string name="analyse">Analyse area</string>
+    <string name="cancel">Cancel</string>
+    <string name="close">Close</string>
+    <string name="analysing">Analysing…</string>
+    <string name="err_capture">The screen could not be captured. Stop the bubble, start it again and allow screen capture.</string>
+    <string name="err_network">No connection to the analysis server. Check the internet connection and try again.</string>
+    <string name="err_small">The selected area is too small. Drag the corners to select more of the fabric.</string>
+</resources>

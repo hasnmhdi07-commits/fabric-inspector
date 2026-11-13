@@ -78,6 +78,8 @@ app.post("/api/analyze",
       const html = req.query.format === "html";
       const rep = await analyse(buf, s, { keepImage: html });
       const totalMs = Math.round(performance.now() - t0);
+      // the phone apps read the verdict from this header (for the dot on the bubble) without parsing the page
+      res.set({ "X-Fabric-Verdict": `${rep.verdict.state}|${rep.verdict.severity ?? ""}`, "Access-Control-Expose-Headers": "X-Fabric-Verdict" });
       if (html) return res.type("html").send(await resultPage(rep, totalMs));
       res.json({ ok: true, ...rep, totalMs, settings: s });
     } catch (e) {

@@ -3,47 +3,60 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Fabric Defect Inspector</title>
+<title>Fabric Inspector</title>
 <meta name="description" content="AI fabric defect detection with causes and remedies - runs on your device">
-<meta name="theme-color" content="#4f46e5">
+<meta name="theme-color" content="#2f7d3b">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 <header>
-  <h1>🧵 Fabric Defect Inspector</h1>
-  <p>Photograph fabric → defects, severity, likely causes and remedies. The AI runs on your device; photos are not uploaded.</p>
+  <div class="brand">
+    <svg class="pickglass" viewBox="0 0 54 54" aria-hidden="true">
+      <defs><radialGradient id="pg" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#86cf8d"/><stop offset=".45" stop-color="#63b96c"/><stop offset="1" stop-color="#3f8f48"/></radialGradient></defs>
+      <circle cx="27" cy="27" r="27" fill="url(#pg)"/>
+      <circle cx="27" cy="27" r="17" fill="rgba(255,255,255,.10)" stroke="#fff" stroke-width="2.2"/>
+      <path d="M14 27h26M27 14v26" stroke="rgba(255,255,255,.55)" stroke-width="1"/>
+      <path d="M17 27v-5M21 27v-3M25 27v-3M29 27v-3M33 27v-3M37 27v-5" stroke="#fff" stroke-width="1.1"/>
+      <path d="M39.5 39.5l6 6" stroke="#f0bf45" stroke-width="4" stroke-linecap="round"/>
+    </svg>
+    <h1>Fabric Inspector</h1>
+  </div>
+  <p>Photograph fabric to find defects, their severity, likely causes and remedies. The AI runs on your device; photos are not uploaded.</p>
 </header>
 
 <main>
   <section class="card" id="inputCard">
-    <div id="preview" class="preview"><span>Take or choose a fabric photo<br><small>(PC: you can also drag &amp; drop or paste)</small></span></div>
+    <div id="preview" class="preview"><span>Take or choose a fabric photo<br><small>On a PC you can also drag and drop or paste a photo</small></span></div>
     <div class="row">
-      <label class="btn primary">📷 Camera<input id="fileCam" type="file" accept="image/*" capture="environment" hidden></label>
-      <label class="btn">🖼 Choose photo<input id="fileAny" type="file" accept="image/*" hidden></label>
+      <label class="btn primary">Take photo<input id="fileCam" type="file" accept="image/*" capture="environment" hidden></label>
+      <label class="btn">Choose photo<input id="fileAny" type="file" accept="image/*" hidden></label>
     </div>
     <fieldset class="checks">
       <legend>Checks</legend>
-      <label><input type="checkbox" id="chkDef" checked> Local defects (AI)</label>
-      <label><input type="checkbox" id="chkShade"> Shade (ΔE)</label>
+      <label><input type="checkbox" id="chkDef" checked> Defects (AI)</label>
+      <label><input type="checkbox" id="chkShade"> Shade ΔE</label>
       <label><input type="checkbox" id="chkSkew"> Bow / skew</label>
       <small>Shade and bow/skew: only for flat, evenly lit photos taken from straight above.</small>
     </fieldset>
-    <details>
+    <details class="box">
       <summary>Settings</summary>
-      <label>Detection confidence <b id="confVal">0.23</b>
+      <label>Detection confidence <b id="confVal" class="mono">0.23</b>
         <input type="range" id="conf" min="0.05" max="0.9" step="0.01" value="0.23"></label>
-      <small>Lower = finds more defects but more false alarms.</small>
+      <small>Lower finds more defects but gives more false alarms.</small>
       <label>Image scale (pixels per mm, 0 = unknown)<input type="number" id="pxmm" min="0" step="0.1" value="0"></label>
-      <small>With a ruler in the photo: pixels between two cm marks ÷ 10. Enables real 4-point scores.</small>
+      <small>With a ruler in the photo: pixels between two cm marks ÷ 10. Gives ASTM D5430 points.</small>
       <label>Shade tolerance ΔE CMC(2:1)<input type="number" id="tol" min="0.2" max="5" step="0.1" value="1.0"></label>
       <label>Skew limit (%)<input type="number" id="skewLim" min="0.5" max="10" step="0.5" value="3"></label>
       <label>Bow limit (%)<input type="number" id="bowLim" min="0.5" max="10" step="0.5" value="2"></label>
       <label>Weft direction in photo<select id="weft"><option>horizontal</option><option>vertical</option></select></label>
     </details>
-    <button id="analyse" class="btn primary big" disabled>🔍 Analyse</button>
+    <button id="analyse" class="btn primary big" disabled>Analyse</button>
     <div class="examples">
       <span>Try an example:</span>
       <button class="example" data-src="examples/stain_example.jpg"><img src="examples/stain_example.jpg" alt="stain example"></button>
@@ -53,28 +66,29 @@
   </section>
 
   <section class="card" id="results" hidden>
+    <div id="verdict"></div>
     <div id="tabs" class="tabs"></div>
     <div id="view" class="view"></div>
     <div id="report" class="report"></div>
-    <button id="download" class="btn" hidden>⬇ Download full report (.txt)</button>
+    <button id="download" class="btn" hidden>Download report (.txt)</button>
   </section>
 </main>
 
 <footer>
   <p id="status" role="status">Starting…</p>
-  <button id="install" class="btn" hidden>⤓ Install app</button>
-  <details>
+  <button id="install" class="btn" hidden>Install app</button>
+  <details class="box">
     <summary>About this app</summary>
     <p><b>How it works.</b> 1) A YOLO11 neural network detects hole/tear, stain, slub/neps and broken pick/end.
     2) Shade: CIELAB colour difference ΔE CMC(2:1) with a heat map. 3) Bow/skew: weft-line angle across the width
     (ASTM D3882 definitions). 4) A rule-based knowledge base (4-point system ASTM D5430) gives severity, likely
-    causes, remedy and prevention - it never invents causes.</p>
+    causes, remedy and prevention. It never invents causes.</p>
     <p><b>Photo tips.</b> Fabric flat, camera straight above, even daylight, no shadows. Add a ruler for real sizes.</p>
     <p><b>Data.</b> Trained on public datasets: Fabric Stain Dataset (Univ. of Moratuwa, CC0) and Roboflow Universe
     projects (CC BY 4.0) by aitex-data-set-waiandt, fault-annotations, pulak-deb-roy, defects-zxmr5, defect-dataset,
     projectcollege-msi80, fabric-defect-detection-6xxtk. Example images: Fabric Stain Dataset (CC0), defects-zxmr5
     (CC BY 4.0), synthetic.</p>
-    <p><i>Thesis prototype - decision support for a trained inspector, not a replacement.</i></p>
+    <p><i>Thesis prototype: decision support for a trained inspector, not a replacement.</i></p>
   </details>
 </footer>
 <script type="module" src="js/main.js"></script>

@@ -49,28 +49,35 @@ for src, name in LEGACY_FILES.items():
 # 4. examples
 shutil.copytree(ROOT / "web" / "examples", OUT / "examples", dirs_exist_ok=True)
 
-# 5. icons (fabric grid + magnifier, same motif as the desktop bubble)
+# 5. icons: the pick glass (thread-counting lens with a 5 mm reticle and a chalk-yellow handle) on fern green
 (OUT / "icons").mkdir(exist_ok=True)
 for size in (192, 512):
-    s = size / 192
-    im = np.zeros((size, size, 3), np.uint8); im[:] = (229, 70, 79)          # indigo (BGR)
-    c = size // 2
-    for d in (-30, 0, 30):
-        cv2.line(im, (int(c - 50 * s), int(c + d * s)), (int(c + 50 * s), int(c + d * s)), (245, 240, 235), max(2, int(5 * s)))
-        cv2.line(im, (int(c + d * s), int(c - 50 * s)), (int(c + d * s), int(c + 50 * s)), (245, 240, 235), max(2, int(5 * s)))
-    cv2.circle(im, (int(c + 14 * s), int(c - 14 * s)), int(32 * s), (0, 210, 255), max(3, int(10 * s)), cv2.LINE_AA)
-    cv2.line(im, (int(c + 38 * s), int(c + 10 * s)), (int(c + 62 * s), int(c + 34 * s)), (0, 210, 255), max(3, int(12 * s)), cv2.LINE_AA)
-    cv2.imwrite(str(OUT / "icons" / f"icon-{size}.png"), im)
+    S = 4                                                   # draw 4x larger, then shrink = smooth edges
+    n, k = size * S, size * S / 54.0
+    yy, xx = np.mgrid[0:n, 0:n].astype(np.float32)
+    d = np.clip(np.hypot(xx - 0.35 * n, yy - 0.30 * n) / (0.75 * n), 0, 1)[..., None]
+    c0, c1, c2 = (np.array(c, np.float32) for c in ((141, 207, 134), (108, 185, 99), (72, 143, 63)))   # BGR
+    im = np.where(d < .45, c0 + (c1 - c0) * d / .45, c1 + (c2 - c1) * (d - .45) / .55).astype(np.uint8)
+    im = np.ascontiguousarray(im)
+    P = lambda x, y: (int(round(x * k)), int(round(y * k)))
+    W = (255, 255, 255)
+    cv2.circle(im, P(27, 27), int(15 * k), W, max(1, int(2.0 * k)), cv2.LINE_AA)
+    for a, b in (((16, 27), (38, 27)), ((27, 16), (27, 38))):
+        cv2.line(im, P(*a), P(*b), (215, 240, 212), max(1, int(0.9 * k)), cv2.LINE_AA)
+    for i in range(6):
+        x = 18.25 + i * 3.5
+        cv2.line(im, P(x, 27), P(x, 27 - (4.5 if i % 5 == 0 else 2.7)), W, max(1, int(1.0 * k)), cv2.LINE_AA)
+    cv2.line(im, P(38, 38), P(43, 43), (69, 191, 240), max(1, int(3.6 * k)), cv2.LINE_AA)
+    cv2.imwrite(str(OUT / "icons" / f"icon-{size}.png"), cv2.resize(im, (size, size), interpolation=cv2.INTER_AREA))
 
 # 6. PWA manifest
 (OUT / "manifest.webmanifest").write_text(json.dumps({
-    "name": "Fabric Defect Inspector", "short_name": "Fabric QC", "start_url": "./", "scope": "./",
-    "display": "standalone", "background_color": "#0f1012", "theme_color": "#4f46e5",
+    "name": "Fabric Inspector", "short_name": "Fabric Inspector", "start_url": "./", "scope": "./",
+    "display": "standalone", "background_color": "#ffffff", "theme_color": "#2f7d3b",
     "description": "AI fabric defect detection with causes and remedies - runs on your device",
     "icons": [{"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
               {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}],
 }, indent=1), encoding="utf-8")
-
 # 7. service worker: cache everything for offline use; cache name changes when any file changes
 all_files = sorted(p.relative_to(OUT).as_posix() for p in OUT.rglob("*")
                    if p.is_file() and p.name not in ("sw.js", "README.md", ".gitattributes"))

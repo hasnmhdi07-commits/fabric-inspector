@@ -87,14 +87,15 @@ export async function analyse(buf, settings = {}) {
     const sh = analyseShade(img, { tolerance: s.shadeTol, excludeRects: excl });
     t.shade = performance.now() - t0;
     const r = assess("shade_variation", { deltaE: sh.value, shadeTolerance: s.shadeTol });
-    r.measure = sh.summary; r.shade = sh.details; items.push(r);
+    r.measure = sh.summary; r.shade = sh.details; r.value = sh.value; items.push(r);
   }
   if (s.doSkew) {
     t0 = performance.now();
     try {
       const sk = analyseSkewBow(img, { weft: s.weft, skewTol: s.skewLimit, bowTol: s.bowLimit });
       for (const [name, o] of [["skewing", { skewPct: sk.skewPct, skewLimit: s.skewLimit }], ["bowing", { bowPct: sk.bowPct, bowLimit: s.bowLimit }]]) {
-        const r = assess(name, o); r.measure = sk.summary; r.skew = { skewPct: sk.skewPct, bowPct: sk.bowPct }; items.push(r);
+        const r = assess(name, o); r.measure = sk.summary; r.skew = { skewPct: sk.skewPct, bowPct: sk.bowPct };
+        r.value = Math.abs(name === "skewing" ? sk.skewPct : sk.bowPct); items.push(r);
       }
     } catch (e) { notes.push(`Bow/skew check skipped: ${e.message}`); }
     t.bow_skew = performance.now() - t0;

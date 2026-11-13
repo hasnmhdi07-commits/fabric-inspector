@@ -3,7 +3,7 @@
 import { Detector } from "./detector.js";
 import { analyseShade } from "./shade.js";
 import { analyseSkewBow } from "./skew.js";
-import { loadKB, assess, reportHtml, reportText, SEVERITY_ORDER } from "./kb.js";
+import { loadKB, assess, verdictHtml, reportHtml, reportText, SEVERITY_ORDER } from "./kb.js";
 import { photoProblem, makeVerdict } from "./verdict.js";
 import { limitSize, toCanvas } from "./imgutil.js";
 
@@ -34,7 +34,7 @@ export async function analyse(img, s) {
     const sh = analyseShade(img, { tolerance: s.shadeTol, excludeRects: excl });
     t.shade = performance.now() - t0;
     const r = assess("shade_variation", { deltaE: sh.value, shadeTolerance: s.shadeTol });
-    r.measure = sh.summary; r.shade = sh.details; items.push(r);
+    r.measure = sh.summary; r.shade = sh.details; r.value = sh.value; items.push(r);
     views["Shade heat map"] = renderShade(sh);
   }
   if (s.doSkew) {
@@ -42,7 +42,8 @@ export async function analyse(img, s) {
     try {
       const sk = analyseSkewBow(img, { weft: s.weft, skewTol: s.skewLimit, bowTol: s.bowLimit });
       for (const [name, o] of [["skewing", { skewPct: sk.skewPct, skewLimit: s.skewLimit }], ["bowing", { bowPct: sk.bowPct, bowLimit: s.bowLimit }]]) {
-        const r = assess(name, o); r.measure = sk.summary; r.skew = { skewPct: sk.skewPct, bowPct: sk.bowPct }; items.push(r);
+        const r = assess(name, o); r.measure = sk.summary; r.skew = { skewPct: sk.skewPct, bowPct: sk.bowPct };
+        r.value = Math.abs(name === "skewing" ? sk.skewPct : sk.bowPct); items.push(r);
       }
       views["Weft line (bow/skew)"] = renderSkew(sk);
     } catch (e) { notes.push(`Bow/skew check skipped: ${e.message}`); }
@@ -52,7 +53,7 @@ export async function analyse(img, s) {
   items.sort((a, b) => si(b.severity) - si(a.severity) || (b.confidence ?? 0) - (a.confidence ?? 0));
   items.forEach((r, i) => (r.index = i + 1));
   if (s.doShade || s.doSkew) notes.push("Shade and bow/skew need a flat fabric photo taken straight from above in even light; other photos give only indicative values.");
-  return { items, views: { Defects: renderDefects(img, items), ...views }, notes, timings: t, imageSize: [W, H], problem: null, verdict: makeVerdict(items, null, s.doDefects) };
+  return { items, views: { Defects: renderDefects(img, items), ...views }, notes, timings: t, imageSize: [W, H], pxPerMm: s.pxPerMm || 0, problem: null, verdict: makeVerdict(items, null, s.doDefects) };
 }
 
 // ------------------------------------------------------------------ drawing
@@ -149,9 +150,10 @@ async function run() {
 }
 
 function showReport(rep, ms) {
-  const tabs = $("tabs"); tabs.innerHTML = "";
+  $("verdict").innerHTML = verdictHtml(rep);
+  const tabs = $("tabs"); tabs.innerHTML = ""; tabs.hidden = Object.keys(rep.views).length < 2;
   Object.keys(rep.views).forEach((name, i) => {
-    const b = document.createElement("button"); b.textContent = name; b.className = "tab" + (i ? "" : " active");
+    const b = document.createElement("button"); b.textContent = name.split(" (")[0]; b.className = "tab" + (i ? "" : " active");
     b.onclick = () => { [...tabs.children].forEach((x) => x.classList.remove("active")); b.classList.add("active"); showView(name); };
     tabs.appendChild(b);
   });

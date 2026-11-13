@@ -51,6 +51,16 @@ check("photo above 4 MB -> clear message", r.status === 413 && !j.ok && /too lar
 r = await fetch(`${base}/api/analyze?defects=0`, { method: "POST", headers: { "Content-Type": "image/jpeg" }, body: hole }); j = await r.json();
 check("all checks off -> clear message", r.status === 400 && !j.ok);
 
+// result page for the iPhone Shortcut
+r = await fetch(`${base}/api/analyze?format=html`, { method: "POST", headers: { "Content-Type": "image/jpeg" }, body: hole });
+let page = await r.text();
+check("format=html: self-contained result page", r.status === 200 && /text\/html/.test(r.headers.get("content-type")) && page.includes("3 defects") &&
+  page.includes("data:image/jpeg;base64,") && !/<script|<link|src="http/i.test(page), `${(page.length / 1024).toFixed(0)} KB`);
+check("format=html: 3 boxes drawn, causes included", (page.match(/fill="none"/g) || []).length === 3 && page.includes("Likely causes"));
+if (process.argv[2]) (await import("node:fs")).writeFileSync(process.argv[2], page);
+r = await fetch(`${base}/api/analyze?format=html`, { method: "POST", headers: { "Content-Type": "image/jpeg" }, body: Buffer.from("x") }); page = await r.text();
+check("format=html: errors are a readable page too", r.status === 415 && page.includes("could not be read as a photo") && page.includes("<html"));
+
 r = await fetch(`${base}/nothing-here`); j = await r.json();
 check("unknown address -> clear message", r.status === 404 && !j.ok);
 

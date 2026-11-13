@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fabric Check on iPhone</title>
+<meta name="theme-color" content="#2f7d3b">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  main.setup { display: grid; grid-template-columns: 1fr; gap: 16px; max-width: 720px; }
+  ol.steps { margin: 0; padding-left: 22px; display: grid; gap: 10px; }
+  ol.steps li { max-width: 60ch; }
+  .value { font-family: var(--f-mono); font-size: 13px; background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 2px 6px; overflow-wrap: anywhere; }
+  .copy { display: grid; gap: 6px; }
+  .copy input { width: 100%; font: 13px var(--f-mono); padding: 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); }
+  h2 { font: 700 1.1rem var(--f-display); font-stretch: 108%; margin: 0; }
+  .limit { border-left: 3px solid var(--chalk); padding: 2px 0 2px 12px; color: var(--ink-2); }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><img src="icons/icon-192.png" alt="" width="38" height="38" style="border-radius:50%"><h1>Fabric Check on iPhone</h1></div>
+  <p>Apple does not let any app draw its own floating bubble. On iPhone the bubble is Apple's AssistiveTouch button:
+     tap it, tap <b>Fabric Check</b>, and the fabric on your screen is analysed. One-time setup, about 5 minutes.</p>
+</header>
+
+<main class="setup">
+  <section class="card">
+    <h2>1. Make the Fabric Check shortcut</h2>
+    <ol class="steps">
+      <li>Open the <b>Shortcuts</b> app, tap <b>+</b>, and name the shortcut <span class="value">Fabric Check</span>.</li>
+      <li>Add the action <b>Take Screenshot</b>.</li>
+      <li>Add <b>Resize Image</b>. Set it to <b>Longest Edge</b>, <span class="value">1600</span>.</li>
+      <li>Add <b>Convert Image</b>. Choose <b>JPEG</b>, quality about 80%.</li>
+      <li>Add <b>Get Contents of URL</b> and paste the address below. Tap <b>Show More</b>:
+          Method <b>POST</b>, Request Body <b>File</b>, and choose <b>Converted Image</b> as the file.</li>
+      <li>Add <b>Quick Look</b>. It shows the result.</li>
+    </ol>
+    <div class="copy">
+      <label for="url">Address for step 5</label>
+      <input id="url" readonly value="https://fabric-inspector.vercel.app/api/analyze?format=html" onclick="this.select()">
+      <button class="btn" id="copyBtn" type="button">Copy address</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>2. Put it on the AssistiveTouch button</h2>
+    <ol class="steps">
+      <li>Open <b>Settings → Accessibility → Touch → AssistiveTouch</b> and switch it on. A round button appears on the screen.</li>
+      <li>Tap <b>Customise Top Level Menu</b>, tap one icon, and choose <b>Fabric Check</b> (under Shortcuts).</li>
+      <li>Optional, for one tap: under <b>Custom Actions</b> set <b>Double-Tap</b> to <b>Fabric Check</b>.</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2>3. Use it</h2>
+    <ol class="steps">
+      <li>Show the fabric on the screen: the camera, a photo, WhatsApp, a PDF.</li>
+      <li>Tap the AssistiveTouch button, then <b>Fabric Check</b>.</li>
+      <li>The result opens in a few seconds: the verdict, the marked photo, and for each defect the likely causes, remedy and prevention.</li>
+    </ol>
+    <p class="limit">The first time, iPhone asks to allow the shortcut to send the screenshot to fabric-inspector.vercel.app. Tap <b>Allow</b>.
+      The screenshot is the whole screen, so fill the screen with fabric. It is analysed on the server and not stored.
+      To add shade or bow/skew, end the address with <span class="value">&amp;shade=1&amp;skew=1</span>.</p>
+  </section>
+</main>
+<footer><p><a href="./">Open the web app</a></p></footer>
+<script>
+  document.getElementById("copyBtn").onclick = async () => {
+    const i = document.getElementById("url"), b = document.getElementById("copyBtn");
+    try { await navigator.clipboard.writeText(i.value); } catch { i.select(); document.execCommand("copy"); }
+    b.textContent = "Copied"; setTimeout(() => (b.textContent = "Copy address"), 1500);
+  };
+</script>
+</body>
+</html>

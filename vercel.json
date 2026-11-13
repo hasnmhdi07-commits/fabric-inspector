@@ -8,7 +8,7 @@
     "api/index.mjs": {
       "memory": 1024,
       "maxDuration": 30,
-      "includeFiles": "web_static/{js/**,ort/**,model/**,kb.json}"
+      "includeFiles": "web_static/{js/**,ort/**,model/**,css/**,kb.json}"
     }
   },
   "rewrites": [{ "source": "/api/(.*)", "destination": "/api" }]

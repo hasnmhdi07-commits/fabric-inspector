@@ -1,6 +1,7 @@
 // Fabric Inspector API (Express, stateless: nothing is stored - the photo is analysed in memory and forgotten).
 //   POST /api/analyze   image in -> full result out
 //   GET  /api/health    model version and engine status
+// Add ?format=html to get a ready-to-show result page instead of JSON (used by the iPhone Shortcut).
 // The image can be sent in two ways:
 //   - as the raw request body (Content-Type: image/jpeg or image/png)   <- iPhone Shortcut
 //   - as a form upload, field name "image" (multipart/form-data)        <- web page
@@ -12,6 +13,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { getEngine, analyse, DEFAULTS } from "./engine.mjs";
+import { resultPage, errorPage } from "./result_page.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const MODEL = path.resolve(HERE, "..", "web_static", "model", "best.onnx");
@@ -28,7 +30,9 @@ app.use((req, res, next) => {               // lets the web app and the phone ap
   next();
 });
 
-const fail = (res, status, error, fix) => res.status(status).json({ ok: false, error, fix });
+const fail = (res, status, error, fix) => res.req.query.format === "html"
+  ? res.status(status).type("html").send(errorPage(error, fix))
+  : res.status(status).json({ ok: false, error, fix });
 const num = (v, d, lo, hi) => { const x = Number(v); return v === undefined || !Number.isFinite(x) ? d : Math.min(hi, Math.max(lo, x)); };
 const flag = (v, d) => (v === undefined ? d : ["1", "true", "yes", "on"].includes(String(v).toLowerCase()));
 
@@ -71,8 +75,11 @@ app.post("/api/analyze",
     if (!(s.doDefects || s.doShade || s.doSkew)) return fail(res, 400, "No check is switched on.", "Switch on at least one check: defects, shade or bow/skew.");
     try {
       const t0 = performance.now();
-      const rep = await analyse(buf, s);
-      res.json({ ok: true, ...rep, totalMs: Math.round(performance.now() - t0), settings: s });
+      const html = req.query.format === "html";
+      const rep = await analyse(buf, s, { keepImage: html });
+      const totalMs = Math.round(performance.now() - t0);
+      if (html) return res.type("html").send(await resultPage(rep, totalMs));
+      res.json({ ok: true, ...rep, totalMs, settings: s });
     } catch (e) {
       if (/could not be read as a photo/.test(e.message)) return fail(res, 415, "This file could not be read as a photo.", "Send a JPEG or PNG image.");
       console.error(e);

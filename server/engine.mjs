@@ -56,7 +56,13 @@ export async function decodeImage(buf) {
 }
 
 /** Full analysis of one image. Mirrors analyse() in web_static/js/main.js, without drawing. */
-export async function analyse(buf, settings = {}) {
+export async function analyse(buf, settings = {}, { keepImage = false } = {}) {
+  const rep = await analyseInner(buf, settings);
+  if (!keepImage) delete rep.image;          // the decoded photo is only needed to draw the HTML result page
+  return rep;
+}
+
+async function analyseInner(buf, settings) {
   const { detector } = await getEngine();
   const s = { ...DEFAULTS, ...settings };
   const t = {};
@@ -68,7 +74,7 @@ export async function analyse(buf, settings = {}) {
   const W = img.width, H = img.height, items = [], notes = [];
 
   const problem = photoProblem(img);          // "cannot analyse": say why and what to do, analyse nothing
-  if (problem) return { imageSize: [W, H], scaleFactor: lim.factor, verdict: makeVerdict(items, problem, s.doDefects), problem, items, notes, timings: t };
+  if (problem) return { imageSize: [W, H], scaleFactor: lim.factor, verdict: makeVerdict(items, problem, s.doDefects), problem, items, notes, timings: t, image: img };
 
   if (s.doDefects) {
     t0 = performance.now();
@@ -104,5 +110,5 @@ export async function analyse(buf, settings = {}) {
   items.sort((a, b) => si(b.severity) - si(a.severity) || (b.confidence ?? 0) - (a.confidence ?? 0));
   items.forEach((r, i) => (r.index = i + 1));
   if (s.doShade || s.doSkew) notes.push("Shade and bow/skew need a flat fabric photo taken straight from above in even light; other photos give only indicative values.");
-  return { imageSize: [W, H], scaleFactor: lim.factor, verdict: makeVerdict(items, null, s.doDefects), problem: null, items, notes, timings: t };
+  return { imageSize: [W, H], scaleFactor: lim.factor, pxPerMm: s.pxPerMm || 0, verdict: makeVerdict(items, null, s.doDefects), problem: null, items, notes, timings: t, image: img };
 }

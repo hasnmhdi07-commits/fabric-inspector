@@ -9,7 +9,7 @@ def code(s): cells.append({"cell_type": "code", "metadata": {}, "execution_count
 md("""
 # Fabric defect detection - YOLO training on Colab
 **Before you start:** Runtime → Change runtime type → **T4 GPU** → Save.
-Upload `fabric4.zip` to Google Drive in a folder called **`thesis`** (so: `MyDrive/thesis/fabric4.zip`).
+Upload `fabric4_v4.zip` to Google Drive in a folder called **`thesis`** (so: `MyDrive/thesis/fabric4_v4.zip`).
 
 Run the cells **top to bottom**. Train **one run per Colab session** (each takes ~1–3 h).
 Everything is saved to Google Drive, so nothing is lost if Colab disconnects — use the *Resume* cell.
@@ -32,11 +32,11 @@ drive.mount('/content/drive')
 md("## 2. Copy dataset from Drive to Colab's fast local disk and unzip")
 code("""
 import os, yaml, zipfile, shutil
-DATASET = 'fabric4_v2'            # 'fabric4' = v1, 'fabric4_v2' = cleaned v2, 'fabric4_v3' = v2 without 77bcs
+DATASET = 'fabric4_v4'            # v1 'fabric4', v2 cleaned, v3 = v2 without 77bcs, v4 = strip tiles + neps/knots (make_v4.py)
 DRIVE = '/content/drive/MyDrive/thesis'
 RUNS = f'{DRIVE}/runs'            # results are saved here (persist on Drive)
 DATA = f'/content/{DATASET}'
-TAG = {'fabric4': '', 'fabric4_v2': 'v2', 'fabric4_v3': 'v3'}[DATASET]   # run folders: R1, R1v2, R5v3 ...
+TAG = {'fabric4': '', 'fabric4_v2': 'v2', 'fabric4_v3': 'v3', 'fabric4_v4': 'v4'}[DATASET]   # run folders: R1, R1v2, R5v3 ...
 os.makedirs(RUNS, exist_ok=True)
 if not os.path.exists(f'{DATA}/data.yaml'):
     shutil.copy(f'{DRIVE}/{DATASET}.zip', f'/content/{DATASET}.zip')
@@ -50,12 +50,12 @@ print('classes:', cfg['names'])
 """)
 md("""
 ## 3. Train — choose ONE run per session
-Change `RUN` to `'R1'`, `'R2'`, `'R3'` or `'R4'`. Settings are identical except model / image size,
+Change `RUN` to `'R1'` ... `'R5'`. Settings are identical except model / image size,
 so differences in results come only from that change (a fair comparison).
 """)
 code("""
 from ultralytics import YOLO
-RUN = 'R1'   # <-- change this each session
+RUN = 'R5'   # <-- change this each session (R5 on fabric4_v4 = the recommended run: saves as R5v4)
 SETTINGS = {
     'R1': dict(model='yolo11n.pt', imgsz=640, batch=32),
     'R2': dict(model='yolo11s.pt', imgsz=640, batch=16),
@@ -76,7 +76,7 @@ model.train(
 md("### If Colab disconnected during training: run cell 1 and 2 again, then this cell")
 code("""
 from ultralytics import YOLO
-RUN = 'R1'   # <-- the run that was interrupted
+RUN = 'R5'   # <-- the run that was interrupted (DATASET in cell 2 must be the one it was started with)
 YOLO(f'{RUNS}/{RUN}{TAG}/weights/last.pt').train(resume=True)
 """)
 md("""

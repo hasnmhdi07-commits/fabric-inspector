@@ -1,0 +1,4 @@
+split,images,tiles,hole_tear,stain,slub_neps,broken_pick_end
+train,5901,2807,1143,2521,4775,1254
+val,804,276,204,413,601,195
+test,402,127,128,221,265,133

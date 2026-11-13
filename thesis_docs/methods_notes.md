@@ -75,6 +75,34 @@ For transparency only: R1v2 test mAP50 without that source = 0.595 (vs 0.522 wit
 Trade-off: v3 has fewer printed/patterned fabrics -> own photos of prints needed later.
 v3: train 8,117 / val 733 / test 347 images (`data/merged_v3`, `upload/fabric4_v3.zip`).
 
+## 1e. Dataset v4: resolution and label fixes for the thin classes (`scripts/make_v4.py`, 2026-11-14)
+Source audit findings (all raw sources, every label counted):
+- fabric_defect_stage2_ra_m (2,900 line-scan photos) is 2048 x 240 px. At the 640 px training size the thin
+  side of its slub / cut-pick boxes has a median of 4.3 px - too small to learn. This explains the weak
+  slub and broken pick/end AP better than model capacity does.
+- `merge_datasets.py` had a mapping bug: "thick yarn" and "030 - nep" sat behind a comment on the same line and
+  were dropped, so the class slub_neps contained no neps and no thick yarn in v1-v3.
+- fabric_defect_detection-yvkgj is 9,455 augmented copies of only 400 photos (about 23 each), which dominated
+  training without adding information.
+v4 changes: (1) every long strip is cut into overlapping tiles (length 2 x height, 25 % overlap) at full
+resolution -> median thin side 18 px at 640 px training size, 27 px at 960; (2) cleaning per tile: only tiles
+showing an unused defect type are removed, not the whole strip; (3) neps and thick yarn mapped to slub_neps;
+(4) "Knot"/"knots" mapped to slub_neps too (two sources already label "Knot-Slub" as one class), so the class
+means a local thick place in a yarn: slub, nep or knot; (5) at most 4 training copies per original photo
+(2 per strip); (6) fabric-defects-77bcs stays excluded.
+Duplicate detection: the 64-bit difference hash called hundreds of different plain-fabric strips "the same
+photo" (they share the camera's lighting profile). v4 confirms each 64-bit match with a 256-bit hash and
+identifies strips by file name only.
+Splits: every photo keeps its v1-v3 split; mixed duplicate groups go to the stricter split. Checked: no v3 test
+or validation photo is in v4 training; 267 of the 298 non-strip v3 test images are in the v4 test split with
+identical labels (the rest: another copy of the same photo was kept, or background cap).
+Result: train 5,901 / val 804 / test 402 images (2,807 / 276 / 127 are strip tiles). Training boxes: hole 1,143,
+stain 2,521, slub/nep/knot 4,775 (v3: 1,765), broken pick/end 1,254. Fewer training images than v3 (8,117)
+because copies were capped; more distinct information for the weak classes.
+Limitations: (a) v4 changes the meaning of slub_neps, so v4 numbers are not directly comparable with v1-v3
+numbers; compare models on the same test set. (b) The knot/slub merge is a labelling decision to be confirmed
+by the textile reviewer. (c) Still only public data: own photos remain necessary (domain gap).
+
 ## 2. Shade variation (CIELAB delta E) - `src/shade/delta_e.py`
 - RGB -> CIELAB (sRGB, D65), light Gaussian blur and region averaging remove yarn texture.
 - Reference (approved shade) vs test area; metrics: dE CMC(2:1) (pass/fail, textile standard, ISO 105-J03),

@@ -10,7 +10,8 @@ import sharp from "sharp";
 import { Detector } from "../web_static/js/detector.js";
 import { analyseShade } from "../web_static/js/shade.js";
 import { analyseSkewBow } from "../web_static/js/skew.js";
-import { loadKB, assess, worstSeverity, SEVERITY_ORDER } from "../web_static/js/kb.js";
+import { loadKB, assess, SEVERITY_ORDER } from "../web_static/js/kb.js";
+import { photoProblem, makeVerdict } from "../web_static/js/verdict.js";
 import { limitSize } from "../web_static/js/imgutil.js";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -66,6 +67,9 @@ export async function analyse(buf, settings = {}) {
   t.decode = performance.now() - t0;
   const W = img.width, H = img.height, items = [], notes = [];
 
+  const problem = photoProblem(img);          // "cannot analyse": say why and what to do, analyse nothing
+  if (problem) return { imageSize: [W, H], scaleFactor: lim.factor, verdict: makeVerdict(items, problem, s.doDefects), problem, items, notes, timings: t };
+
   if (s.doDefects) {
     t0 = performance.now();
     const dets = await detector.detect(img, { conf: s.conf, iou: 0.5 });
@@ -99,5 +103,5 @@ export async function analyse(buf, settings = {}) {
   items.sort((a, b) => si(b.severity) - si(a.severity) || (b.confidence ?? 0) - (a.confidence ?? 0));
   items.forEach((r, i) => (r.index = i + 1));
   if (s.doShade || s.doSkew) notes.push("Shade and bow/skew need a flat fabric photo taken straight from above in even light; other photos give only indicative values.");
-  return { imageSize: [W, H], scaleFactor: lim.factor, worst: worstSeverity(items), items, notes, timings: t };
+  return { imageSize: [W, H], scaleFactor: lim.factor, verdict: makeVerdict(items, null, s.doDefects), problem: null, items, notes, timings: t };
 }

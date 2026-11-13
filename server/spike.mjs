@@ -22,11 +22,11 @@ for (const f of files) {
   const rep = await analyse(buf, { doShade: true, doSkew: true });
   const ms = performance.now() - t0;
   const t = Object.entries(rep.timings).map(([k, v]) => `${k} ${v.toFixed(0)}`).join(", ");
-  console.log(`\n${path.basename(f)}  ${rep.imageSize.join("x")}  total ${ms.toFixed(0)} ms (${t})  memory ${mb()} MB  worst=${rep.worst}`);
+  console.log(`\n${path.basename(f)}  ${rep.imageSize.join("x")}  total ${ms.toFixed(0)} ms (${t})  memory ${mb()} MB  verdict=${rep.verdict.severity ?? rep.verdict.state}: ${rep.verdict.title}`);
   for (const r of rep.items) {
     console.log(`  #${r.index} ${r.defect} ${r.severity}` + (r.box ? ` conf ${r.confidence.toFixed(3)} box ${r.box.map((v) => v.toFixed(0)).join(",")}` : ` | ${r.measure ?? ""}`));
   }
-  out[path.basename(f)] = { size: rep.imageSize, ms, items: rep.items.map((r) => ({ defect: r.defect, severity: r.severity, confidence: r.confidence ?? null, box: r.box ?? null, measure: r.measure ?? null })) };
+  out[path.basename(f)] = { size: rep.imageSize, ms, verdict: rep.verdict, items: rep.items.map((r) => ({ defect: r.defect, severity: r.severity, confidence: r.confidence ?? null, box: r.box ?? null, measure: r.measure ?? null })) };
 }
 await writeFile(path.join(HERE, "spike_result.json"), JSON.stringify(out, null, 1));
 console.log(`\npeak memory ${(process.resourceUsage().maxRSS / 1024).toFixed(0)} MB`);

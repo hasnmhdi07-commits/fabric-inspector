@@ -3,7 +3,8 @@
 import { Detector } from "./detector.js";
 import { analyseShade } from "./shade.js";
 import { analyseSkewBow } from "./skew.js";
-import { loadKB, assess, reportHtml, reportText, worstSeverity, SEVERITY_ORDER, SEV_COLOR } from "./kb.js";
+import { loadKB, assess, reportHtml, reportText, SEVERITY_ORDER } from "./kb.js";
+import { photoProblem, makeVerdict } from "./verdict.js";
 import { limitSize, toCanvas } from "./imgutil.js";
 
 const MAX_SIDE = 1600;
@@ -14,6 +15,8 @@ let detector = null, image = null, imageName = "", report = null;
 // ------------------------------------------------------------------ engine
 export async function analyse(img, s) {
   const W = img.width, H = img.height, items = [], views = {}, notes = [], t = {};
+  const problem = photoProblem(img);        // third verdict state: say why and what to do, analyse nothing
+  if (problem) return { items, views: { Photo: toCanvas(img) }, notes, timings: t, imageSize: [W, H], problem, verdict: makeVerdict(items, problem, s.doDefects) };
   if (s.doDefects) {
     const t0 = performance.now();
     const dets = await detector.detect(img, { conf: s.conf, iou: 0.5 });
@@ -49,7 +52,7 @@ export async function analyse(img, s) {
   items.sort((a, b) => si(b.severity) - si(a.severity) || (b.confidence ?? 0) - (a.confidence ?? 0));
   items.forEach((r, i) => (r.index = i + 1));
   if (s.doShade || s.doSkew) notes.push("Shade and bow/skew need a flat fabric photo taken straight from above in even light; other photos give only indicative values.");
-  return { items, views: { Defects: renderDefects(img, items), ...views }, notes, timings: t, imageSize: [W, H] };
+  return { items, views: { Defects: renderDefects(img, items), ...views }, notes, timings: t, imageSize: [W, H], problem: null, verdict: makeVerdict(items, null, s.doDefects) };
 }
 
 // ------------------------------------------------------------------ drawing
@@ -152,11 +155,10 @@ function showReport(rep, ms) {
     b.onclick = () => { [...tabs.children].forEach((x) => x.classList.remove("active")); b.classList.add("active"); showView(name); };
     tabs.appendChild(b);
   });
-  showView("Defects");
+  showView(Object.keys(rep.views)[0]);
   $("report").innerHTML = reportHtml(rep);
   $("results").hidden = false; $("download").hidden = false;
-  const n = rep.items.filter((r) => r.box).length, worst = worstSeverity(rep.items);
-  status(`${imageName}: ${n} local defect(s), overall ${worst.toUpperCase()} - ${ms.toFixed(0)} ms (on this device)`);
+  status(`${imageName}: ${rep.verdict.title} - ${ms.toFixed(0)} ms (on this device)`);
   $("results").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -212,7 +214,7 @@ window.fabricApp = {
     const lim = limitSize(img, MAX_SIDE);
     const full = { doDefects: true, doShade: false, doSkew: false, conf: 0.23, pxPerMm: 0, shadeTol: 1, skewLimit: 3, bowLimit: 2, weft: "horizontal", ...s };
     const rep = await analyse(lim.img, full);
-    return { size: rep.imageSize, timings: rep.timings, notes: rep.notes,
+    return { size: rep.imageSize, timings: rep.timings, notes: rep.notes, verdict: rep.verdict,
              items: rep.items.map((r) => ({ defect: r.defect, severity: r.severity, confidence: r.confidence, box: r.box, basis: r.severity_basis, shade: r.shade, skew: r.skew })) };
   },
 };

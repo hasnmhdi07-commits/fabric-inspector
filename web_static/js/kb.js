@@ -1,5 +1,6 @@
 // Rule-based knowledge base (JavaScript port of src/knowledge/kb.py + report_html.py).
 // Causes/remedies come ONLY from kb.json (generated from knowledge_base.yaml).
+import { SEV_LABEL } from "./verdict.js";
 export const SEVERITY_ORDER = ["acceptable", "minor", "major", "critical"];
 export const SEV_COLOR = { acceptable: "#0ca30c", minor: "#b07800", major: "#d0612f", critical: "#d03b3b" };
 export const SEV_ICON = { acceptable: "✓", minor: "!", major: "!!", critical: "✕" };
@@ -80,13 +81,16 @@ const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&
 
 /** Same layout as report_html.py */
 export function reportHtml(rep, maxItems = 3) {
-  const worst = worstSeverity(rep.items);
-  const out = [`<p class="overall"><b>Overall: <span style="color:${SEV_COLOR[worst]}">${SEV_ICON[worst]} ${worst.toUpperCase()}</span></b></p>`];
+  const v = rep.verdict;
+  const vcol = v.severity ? SEV_COLOR[v.severity] : v.state === "cannot" ? SEV_COLOR.critical : "inherit";
+  const chip = v.severity ? `<span class="chip" style="background:${vcol}">${SEV_LABEL[v.severity].toUpperCase()}</span> ` : "";
+  const out = [`<div class="verdict ${v.state}">${chip}<b${v.severity ? "" : ` style="color:${vcol}"`}>${esc(v.title)}</b><div class="sec">${esc(v.detail)}</div></div>`];
   for (const r of rep.items) {
     const col = SEV_COLOR[r.severity];
     const conf = r.confidence != null ? ` &nbsp;·&nbsp; confidence ${(r.confidence * 100).toFixed(0)}%` : "";
+    const pts = r.points != null ? ` &nbsp;·&nbsp; ${r.points} pt` : "";
     let s = `<div class="finding" style="border-left-color:${col}">` +
-      `<b>#${r.index} ${esc(r.name)}</b> &nbsp;<b style="color:${col}">${SEV_ICON[r.severity]} ${r.severity.toUpperCase()}</b>${conf}` +
+      `<b>#${r.index} ${esc(r.name)}</b> &nbsp;<b style="color:${col}">${SEV_LABEL[r.severity].toUpperCase()}</b>${pts}${conf}` +
       `<div class="sec">${esc(r.severity_basis)}</div>`;
     if (r.measure) s += `<div class="sec">${esc(r.measure)}</div>`;
     if (r.severity !== "acceptable") {
@@ -97,17 +101,18 @@ export function reportHtml(rep, maxItems = 3) {
     out.push(s + "</div>");
   }
   for (const n of rep.notes) out.push(`<p class="sec">ℹ ${esc(n)}</p>`);
-  out.push(`<p class="mut">Causes and remedies come from the rule-based knowledge base (most common causes for this ` +
+  if (rep.items.length) out.push(`<p class="mut">Causes and remedies come from the rule-based knowledge base (most common causes for this ` +
            `defect type) - confirm on the production line. Full lists are in the downloadable report.</p>`);
   return out.join("");
 }
 
 /** Same as report_to_text() in engine.py */
 export function reportText(rep) {
-  const worst = worstSeverity(rep.items);
-  const L = [`Fabric inspection report - overall: ${worst.toUpperCase()}`, `Image ${rep.imageSize[0]}x${rep.imageSize[1]} px`, ""];
+  const v = rep.verdict;
+  const head = v.severity ? `${SEV_LABEL[v.severity].toUpperCase()} - ${v.title}` : v.title;
+  const L = [`Fabric inspection report - result: ${head}`, `   ${v.detail}`, `Image ${rep.imageSize[0]}x${rep.imageSize[1]} px`, ""];
   for (const r of rep.items) {
-    L.push(`#${r.index} ${r.name} - ${r.severity.toUpperCase()}` + (r.confidence != null ? ` (confidence ${(r.confidence * 100).toFixed(0)}%)` : ""));
+    L.push(`#${r.index} ${r.name} - ${SEV_LABEL[r.severity].toUpperCase()}` +(r.confidence != null ? ` (confidence ${(r.confidence * 100).toFixed(0)}%)` : ""));
     L.push(`   basis: ${r.severity_basis}`);
     if (r.measure) L.push(`   measurement: ${r.measure}`);
     L.push("   likely causes:", ...r.causes.map((c) => `     - [${c.stage}] ${c.cause}`));

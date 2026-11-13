@@ -49,6 +49,9 @@ input[type=range] { width: 100%; }
 .report ul { margin: 2px 0 6px; padding-left: 20px; }
 .report .sec { color: var(--ink2); }
 .report .mut { color: var(--ink2); font-size: .8rem; }
-.report .overall { font-size: 1.1rem; margin: 0 0 10px; }
+.report .verdict { font-size: 1.1rem; margin: 0 0 12px; padding: 10px 12px; border: 1px solid var(--ink2); border-radius: 10px; }
+.report .verdict.none, .report .verdict.cannot { border-style: dashed; }
+.report .verdict .sec { font-size: .9rem; margin-top: 2px; }
+.report .chip { display: inline-block; color: #fff; font-size: .7rem; font-weight: 700; letter-spacing: .05em; padding: 2px 8px; border-radius: 999px; vertical-align: 2px; }
 footer { padding-bottom: 24px; color: var(--ink2); display: grid; gap: 10px; margin-top: 16px; }
 footer #status { margin: 0; color: var(--ink); font-weight: 600; }

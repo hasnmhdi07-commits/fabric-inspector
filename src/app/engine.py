@@ -16,9 +16,12 @@ import numpy as np
 from src.knowledge.kb import load_kb, assess, SEVERITY_ORDER
 from src.shade.delta_e import analyse_shade
 from src.skew.bow_skew import analyse_skew_bow
+from src.app.verdict import photo_problem, make_verdict, SEV_LABEL
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_MODEL = ROOT / "models" / "best.pt"
+# ONNX model: the same file and the same 640x640 letterbox as the browser and the server -> same result everywhere
+# (the .pt model pads non-square photos differently and can give slightly different boxes)
+DEFAULT_MODEL = ROOT / "models" / "best.onnx"
 CLASSES = ["hole_tear", "stain", "slub_neps", "broken_pick_end"]
 # categorical colours for class identity (BGR); severity uses separate status colours in the UI
 CLASS_COLORS = {"hole_tear": (214, 120, 42), "stain": (52, 104, 235),
@@ -47,11 +50,18 @@ class Report:
     notes: list = field(default_factory=list)
     timings_ms: dict = field(default_factory=dict)
     image_size: tuple = (0, 0)
+    problem: dict = None          # set when the photo cannot be analysed (too dark, blurred, too small ...)
+    defects_checked: bool = True
 
     @property
-    def worst(self) -> str:
-        sev = [i["severity"] for i in self.items]
-        return max(sev, key=SEVERITY_ORDER.index) if sev else "acceptable"
+    def verdict(self) -> dict:
+        """The one result shown to the user: state 'defects' | 'none' | 'cannot' (see verdict.py)."""
+        return make_verdict(self.items, self.problem, self.defects_checked)
+
+    @property
+    def worst(self):
+        """Highest severity found, or None when nothing was found / the photo could not be analysed."""
+        return self.verdict["severity"]
 
 
 class Analyzer:
@@ -65,6 +75,10 @@ class Analyzer:
     def analyse(self, img_bgr: np.ndarray, s: Settings) -> Report:
         h, w = img_bgr.shape[:2]
         items, views, notes, t = [], {}, [], {}
+
+        problem = photo_problem(img_bgr)
+        if problem:                              # third verdict state: say why and what to do, analyse nothing
+            return Report([], {"Photo": img_bgr}, [], t, (w, h), problem, s.do_defects)
 
         if s.do_defects:
             t0 = time.perf_counter()
@@ -89,6 +103,7 @@ class Analyzer:
             t["shade"] = (time.perf_counter() - t0) * 1000
             r = assess("shade_variation", delta_e=sh.value, shade_tolerance=s.shade_tol, kb=self.kb)
             r["measure"] = sh.summary()
+            r["value"] = float(sh.value)
             items.append(r)
             views["Shade heat map"] = sh.overlay
 
@@ -100,6 +115,7 @@ class Analyzer:
                                  ("bowing", {"bow_pct": sk.bow_pct, "bow_limit": s.bow_limit})):
                     r = assess(name, kb=self.kb, **kw)
                     r["measure"] = sk.summary()
+                    r["value"] = abs(float(sk.skew_pct if name == "skewing" else sk.bow_pct))
                     items.append(r)
                 views["Weft line (bow/skew)"] = sk.overlay
             except Exception as e:  # e.g. image too small
@@ -114,7 +130,7 @@ class Analyzer:
         if s.do_shade or s.do_skew:
             notes.append("Shade and bow/skew need a flat fabric photo taken straight from above in even light; "
                          "screenshots of other photos give only indicative values.")
-        return Report(items, views, notes, t, (w, h))
+        return Report(items, views, notes, t, (w, h), None, s.do_defects)
 
     @staticmethod
     def _draw(img, items):
@@ -138,10 +154,12 @@ class Analyzer:
 
 
 def report_to_text(rep: Report) -> str:
-    lines = [f"Fabric inspection report - overall: {rep.worst.upper()}",
+    v = rep.verdict
+    head = v["title"] if v["severity"] is None else f"{SEV_LABEL[v['severity']].upper()} - {v['title']}"
+    lines = [f"Fabric inspection report - result: {head}", f"   {v['detail']}",
              f"Image {rep.image_size[0]}x{rep.image_size[1]} px", ""]
     for r in rep.items:
-        lines.append(f"#{r['index']} {r['name']} - {r['severity'].upper()}"
+        lines.append(f"#{r['index']} {r['name']} - {SEV_LABEL[r['severity']].upper()}"
                      + (f" (confidence {r['confidence']:.0%})" if r.get("confidence") is not None else ""))
         lines.append(f"   basis: {r['severity_basis']}")
         if r.get("measure"):

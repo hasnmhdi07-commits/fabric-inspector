@@ -22,6 +22,7 @@ check("health answers", r.status === 200 && j.ok && j.model.file === "best.onnx"
 r = await fetch(`${base}/api/analyze`, { method: "POST", headers: { "Content-Type": "image/jpeg" }, body: hole }); j = await r.json();
 const holes = (j.items ?? []).filter((i) => i.defect === "hole_tear");
 check("raw body upload: 3 holes found", r.status === 200 && j.ok && holes.length === 3, `${j.totalMs} ms`);
+check("verdict: defects state with a title", j.verdict?.state === "defects" && j.verdict.title === "3 defects" && j.verdict.severity === "major", j.verdict?.title);
 check("each finding has causes, remedy, prevention", holes.every((i) => i.causes?.length && i.remedy?.length && i.prevention?.length));
 check("shade and skew are off by default", !(j.items ?? []).some((i) => ["shade_variation", "skewing", "bowing"].includes(i.defect)));
 
@@ -33,6 +34,10 @@ check("shade, skew and bow results present", ["shade_variation", "skewing", "bow
 
 r = await fetch(`${base}/api/analyze?conf=0.81`, { method: "POST", headers: { "Content-Type": "image/jpeg" }, body: hole }); j = await r.json();
 check("confidence setting is applied", j.ok && j.items.length === 1 && j.settings.conf === 0.81, `${j.items?.length} box`);
+
+const skew = await readFile(path.join(EX, "skew_example.jpg"));
+r = await fetch(`${base}/api/analyze`, { method: "POST", headers: { "Content-Type": "image/jpeg" }, body: skew }); j = await r.json();
+check("nothing found -> 'No defects detected', never 'acceptable'", j.verdict?.state === "none" && j.verdict.title === "No defects detected" && !/acceptable/i.test(JSON.stringify(j.verdict)), j.verdict?.detail);
 
 r = await fetch(`${base}/api/analyze`, { method: "POST", headers: { "Content-Type": "image/jpeg" }, body: Buffer.from("this is not a photo") }); j = await r.json();
 check("not a photo -> clear message", r.status === 415 && !j.ok && j.error && j.fix);

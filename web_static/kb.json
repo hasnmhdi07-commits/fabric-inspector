@@ -1,0 +1,318 @@
+{
+ "references": [
+  "ASTM D5430 - Standard Test Methods for Visually Inspecting and Grading Fabrics (4-point system)",
+  "ASTM D3882 - Standard Test Method for Bow and Skew in Woven and Knitted Fabrics",
+  "ISO 13015 - Textiles: determination of distortion (bow and skew) in woven fabrics",
+  "ISO 105-A02 - Grey scale for assessing change in colour",
+  "ISO 105-J03 - Calculation of colour differences (CMC)"
+ ],
+ "defects": {
+  "hole_tear": {
+   "name": "Hole / Tear / Cut",
+   "description": "An opening in the fabric where yarns are broken or missing in both directions.",
+   "stage": [
+    "weaving",
+    "finishing",
+    "handling"
+   ],
+   "causes": [
+    {
+     "stage": "weaving",
+     "cause": "Damaged or burred reed dents, temples (temple rings/rollers) or shuttle/rapier/gripper cutting yarns"
+    },
+    {
+     "stage": "weaving",
+     "cause": "Excessive warp tension or beat-up force combined with weak yarn"
+    },
+    {
+     "stage": "finishing",
+     "cause": "Chemical damage: concentrated acid, alkali, bleach or reducing agent spots weaken fibres, which later break into holes"
+    },
+    {
+     "stage": "finishing",
+     "cause": "Mechanical damage from stenter pins/clips, rough guide rollers, or fabric caught in machinery"
+    },
+    {
+     "stage": "handling",
+     "cause": "Damage during transport, unpacking (knife cuts), hooks, forklift tines, or insects/rodents in storage"
+    }
+   ],
+   "remedy": [
+    "Mark the defect and cut it out during inspection (cut-and-mark / fents), or downgrade the piece",
+    "Small holes in high-value fabric: mend by darning (invisible mending) before finishing",
+    "Find the source: check for a repeating hole position (same distance apart = rotating machine part)"
+   ],
+   "prevention": [
+    "Regular inspection and polishing/replacement of reeds, temples and insertion elements",
+    "Control chemical concentration and avoid undissolved chemical spots; rinse thoroughly",
+    "Maintain rollers, guides and stenter pins; safe packing and handling procedures"
+   ],
+   "severity": {
+    "rule": "hole",
+    "default": "major"
+   }
+  },
+  "stain": {
+   "name": "Stain / Spot (oil, dirt, rust, dye)",
+   "description": "A localized discoloured area caused by foreign matter such as oil, grease, dirt, rust or dye.",
+   "stage": [
+    "weaving",
+    "finishing",
+    "handling"
+   ],
+   "causes": [
+    {
+     "stage": "weaving",
+     "cause": "Oil or grease from over-lubricated loom parts dripping or splashing onto the fabric"
+    },
+    {
+     "stage": "weaving",
+     "cause": "Dirty hands, dirty fly/fluff mixed with oil, dirty cloth rollers or trolleys"
+    },
+    {
+     "stage": "finishing",
+     "cause": "Undissolved dyestuff or chemical particles, water/condensate drops before drying, dye spots"
+    },
+    {
+     "stage": "finishing",
+     "cause": "Rust from wet fabric contacting iron surfaces"
+    },
+    {
+     "stage": "handling",
+     "cause": "Ink/marker, dust and soil during storage and transport; uncovered fabric rolls"
+    }
+   ],
+   "remedy": [
+    "Identify the stain type first (oil, rust, dye, dirt) - the treatment depends on it",
+    "Oil/grease: spot-clean with a suitable solvent or detergent (stain-removal gun), then rewash",
+    "Rust: treat with an oxalic-acid based rust remover, then rinse",
+    "If the stain remains: re-scour/rewash the batch, or cut out / downgrade"
+   ],
+   "prevention": [
+    "Correct lubrication amount, drip guards and regular cleaning of looms",
+    "Clean trolleys and rollers, covered fabric rolls, clean hands/gloves",
+    "Filter and fully dissolve dyes and chemicals; avoid condensate dripping in steamers/dryers",
+    "Use stainless steel or coated surfaces where wet fabric touches metal"
+   ],
+   "severity": {
+    "rule": "length",
+    "default": "minor"
+   }
+  },
+  "slub_neps": {
+   "name": "Slub / Neps (thick places in yarn)",
+   "description": "Slub: a short, abnormally thick place in a yarn. Neps: small tangled knots of fibres on the yarn/fabric surface.",
+   "stage": [
+    "spinning",
+    "weaving"
+   ],
+   "causes": [
+    {
+     "stage": "spinning",
+     "cause": "Faulty drafting: roller lapping, eccentric or worn drafting rollers, wrong roller settings (slubs)"
+    },
+    {
+     "stage": "spinning",
+     "cause": "Fly and fluff caught and spun into the yarn, bad piecing (slubs)"
+    },
+    {
+     "stage": "spinning",
+     "cause": "Poor carding: worn card clothing or wrong card settings, excessive beating in opening (neps)"
+    },
+    {
+     "stage": "spinning",
+     "cause": "Immature / dead cotton fibres that tangle easily (neps; often appear as white specks after dyeing)"
+    },
+    {
+     "stage": "weaving",
+     "cause": "Accumulated fly/fluff on the loom falling into the shed and being woven in"
+    }
+   ],
+   "remedy": [
+    "Grey fabric: remove prominent slubs/neps by burling (careful pulling/trimming) during mending",
+    "Neps that stay white after dyeing: consider topping/re-dyeing with dyes that cover immature cotton better",
+    "Repeated slubs: trace the yarn lot and inform the spinning department/supplier; reject the yarn lot if needed"
+   ],
+   "prevention": [
+    "Specify yarn quality (Uster IPI thick places and neps per km, Classimat faults)",
+    "Electronic yarn clearers at winding to cut out thick places",
+    "Card maintenance (clothing, settings) and good fibre selection (maturity)",
+    "Regular cleaning of looms (blowing/suction) to remove fly"
+   ],
+   "severity": {
+    "rule": "length",
+    "default": "minor"
+   }
+  },
+  "broken_pick_end": {
+   "name": "Broken / Missing End or Pick",
+   "description": "Broken end: a warp yarn is missing or broken (lengthwise line). Broken/missing pick: a weft yarn is missing or broken (crosswise line).",
+   "stage": [
+    "sizing",
+    "weaving"
+   ],
+   "causes": [
+    {
+     "stage": "sizing",
+     "cause": "Poor sizing (low size add-on, uneven sizing) so warp yarns break from abrasion during weaving"
+    },
+    {
+     "stage": "weaving",
+     "cause": "Weak or uneven yarn (low strength, thin places)"
+    },
+    {
+     "stage": "weaving",
+     "cause": "Excessive or uneven warp tension; rough or damaged healds, drop wires or reed"
+    },
+    {
+     "stage": "weaving",
+     "cause": "Warp stop motion not working, so the loom keeps running after an end breaks"
+    },
+    {
+     "stage": "weaving",
+     "cause": "Weft insertion failure: weft breakage, wrong weft tension/feeder, nozzle timing (air-jet), weft stop motion failure"
+    },
+    {
+     "stage": "weaving",
+     "cause": "Incorrect pick finding/restart after a stop (also causes start-up marks)"
+    }
+   ],
+   "remedy": [
+    "Grey fabric: mend by drawing in the missing end/pick by hand (mending)",
+    "Long continuous broken end along the piece: cut out or downgrade the piece",
+    "Repair the loom immediately: check and reset warp and weft stop motions"
+   ],
+   "prevention": [
+    "Optimise sizing recipe and size add-on; good warp preparation",
+    "Correct and uniform warp tension; maintain healds, drop wires and reeds",
+    "Regular checks of warp/weft stop motions and weft insertion settings",
+    "Yarn strength specification; operator training on correct pick finding"
+   ],
+   "severity": {
+    "rule": "length",
+    "default": "major"
+   }
+  },
+  "shade_variation": {
+   "name": "Shade Variation",
+   "description": "Colour difference within a piece (side-centre-side 'listing', end-to-end) or between pieces/lots.",
+   "stage": [
+    "pretreatment",
+    "dyeing",
+    "finishing"
+   ],
+   "causes": [
+    {
+     "stage": "dyeing",
+     "cause": "Batch-to-batch (dye lot) differences: recipe, weighing or water quality variation"
+    },
+    {
+     "stage": "dyeing",
+     "cause": "Uneven dye liquor circulation, temperature or pH variation in the machine (jet, jigger, beam)"
+    },
+    {
+     "stage": "dyeing",
+     "cause": "Uneven padding pressure across the width (side-centre-side shading / listing)"
+    },
+    {
+     "stage": "pretreatment",
+     "cause": "Uneven scouring/bleaching/mercerising, giving uneven absorbency"
+    },
+    {
+     "stage": "finishing",
+     "cause": "Uneven drying or heat-setting temperature across the stenter width"
+    },
+    {
+     "stage": "spinning",
+     "cause": "Mixing fibre lots with different dye affinity (e.g. maturity, polyester merge number)"
+    }
+   ],
+   "remedy": [
+    "Shade sorting: group pieces into shade bands so each garment uses one shade (continuity cards)",
+    "Shade correction: topping/re-dyeing to match the standard, or stripping and re-dyeing",
+    "Listing: re-pad after calibrating padder pressure across the width"
+   ],
+   "prevention": [
+    "Lab-to-bulk recipe control and spectrophotometer checks against the approved standard",
+    "Stable process parameters: temperature, pH, liquor ratio, time",
+    "Uniform pretreatment; regular padder roller pressure calibration",
+    "Control fibre/yarn lots (do not mix lots in one order)"
+   ],
+   "severity": {
+    "rule": "delta_e",
+    "default": "major"
+   }
+  },
+  "bowing": {
+   "name": "Bowing (bow)",
+   "description": "Weft yarns are curved (arc shape) across the fabric width instead of straight.",
+   "stage": [
+    "finishing"
+   ],
+   "causes": [
+    {
+     "stage": "finishing",
+     "cause": "Fabric centre travelling slower or faster than the selvedges (centre lagging) on stenter or rollers"
+    },
+    {
+     "stage": "finishing",
+     "cause": "Uneven tension or overfeed across the width; worn or bent rollers"
+    },
+    {
+     "stage": "finishing",
+     "cause": "No or badly adjusted weft straightener (bow rollers) before the stenter"
+    }
+   ],
+   "remedy": [
+    "Re-run the fabric through a weft straightener (bow rollers) before setting, then re-set on the stenter",
+    "Heat-set synthetic fabrics are difficult to correct after setting - correct before heat-setting"
+   ],
+   "prevention": [
+    "Automatic weft straightener with optical weft sensors at stenter entry",
+    "Check roller alignment and uniform tension across width"
+   ],
+   "severity": {
+    "rule": "bow",
+    "default": "major"
+   }
+  },
+  "skewing": {
+   "name": "Skewing (skew)",
+   "description": "Weft yarns are straight but slanted - not perpendicular to the selvedges.",
+   "stage": [
+    "finishing",
+    "weaving"
+   ],
+   "causes": [
+    {
+     "stage": "finishing",
+     "cause": "Unequal feeding of the two selvedges on the stenter (one side over-fed)"
+    },
+    {
+     "stage": "finishing",
+     "cause": "Misaligned rollers or uneven batching/winding tension"
+    },
+    {
+     "stage": "finishing",
+     "cause": "No or badly adjusted weft straightener (skew rollers)"
+    },
+    {
+     "stage": "weaving",
+     "cause": "Twill weave torque or uneven take-up can contribute to skew"
+    }
+   ],
+   "remedy": [
+    "Re-run through weft straightener (skew rollers) and re-stenter with equal selvedge feeding",
+    "Correct before heat-setting for synthetic fabrics"
+   ],
+   "prevention": [
+    "Weft straightener with automatic control; equal overfeed on both sides of the stenter",
+    "Regular roller alignment checks"
+   ],
+   "severity": {
+    "rule": "skew",
+    "default": "major"
+   }
+  }
+ }
+}

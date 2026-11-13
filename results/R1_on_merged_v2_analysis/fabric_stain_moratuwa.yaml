@@ -1,0 +1,9 @@
+names:
+- hole_tear
+- stain
+- slub_neps
+- broken_pick_end
+nc: 4
+path: C:\thesis\data\merged_v2
+train: C:\thesis\results\R1_on_merged_v2_analysis\fabric_stain_moratuwa.txt
+val: C:\thesis\results\R1_on_merged_v2_analysis\fabric_stain_moratuwa.txt

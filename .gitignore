@@ -1,0 +1,21 @@
+# secrets - never upload
+hf_token.txt
+roboflow_key.txt
+*.key
+.env
+.env.*
+
+# large or generated: datasets, training uploads, environments
+data/
+upload/
+runs/
+venv/
+node_modules/
+__pycache__/
+*.pyc
+*.cache
+
+# local output
+results/reports/
+server/spike_result.json
+.vercel/

@@ -1,0 +1,11 @@
+C:\thesis\data\merged\images\test\rf_fabric_defect_detection-y__c1r1e1n32_70dca644.jpg
+C:\thesis\data\merged\images\test\rf_fabric_defect_detection-y__c1r1e2n49_38bce743.jpg
+C:\thesis\data\merged\images\test\rf_fabric_defect_detection-y__c1r3e2n6_d5a03952.jpg
+C:\thesis\data\merged\images\test\rf_fabric_defect_detection-y__c1r1e1n26_d7cf78e9.jpg
+C:\thesis\data\merged\images\test\rf_fabric_defect_detection-y__c1r1e1n39_539bef19.jpg
+C:\thesis\data\merged\images\test\rf_fabric_defect_detection-y__c1r1e1n44_41e1270e.jpg
+C:\thesis\data\merged\images\test\rf_fabric_defect_detection-y__c1r3e1n23_1fead5c0.jpg
+C:\thesis\data\merged\images\test\rf_fabric_defect_detection-y__c1r3e1n37_b4001c1d.jpg
+C:\thesis\data\merged\images\test\rf_fabric_defect_detection-y__c1r3e2n22_f0ddb581.jpg
+C:\thesis\data\merged\images\test\rf_fabric_defect_detection-y__c1r3e2n42_9de66769.jpg
+C:\thesis\data\merged\images\test\rf_fabric_defect_detection-y__c1r3e2n47_12f176ed.jpg

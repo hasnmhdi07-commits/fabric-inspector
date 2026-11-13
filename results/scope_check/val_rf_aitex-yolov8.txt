@@ -1,0 +1,10 @@
+C:\thesis\data\merged_v2\images\val\rf_aitex-yolov8__0004_002_01_png_6b3b4cfe.jpg
+C:\thesis\data\merged_v2\images\val\rf_aitex-yolov8__0014_006_02_png_b28f6f27.jpg
+C:\thesis\data\merged_v2\images\val\rf_aitex-yolov8__0015_006_02_png_78d7a155.jpg
+C:\thesis\data\merged_v2\images\val\rf_aitex-yolov8__0001_002_00_png_4a27348c.jpg
+C:\thesis\data\merged_v2\images\val\rf_aitex-yolov8__0065_022_00_png_86ae2dbb.jpg
+C:\thesis\data\merged_v2\images\val\rf_aitex-yolov8__0047_019_04_png_4049cb81.jpg
+C:\thesis\data\merged_v2\images\val\rf_aitex-yolov8__0039_019_02_png_a5646dfe.jpg
+C:\thesis\data\merged_v2\images\val\rf_aitex-yolov8__0052_019_03_png_94a368b9.jpg
+C:\thesis\data\merged_v2\images\val\rf_aitex-yolov8__0033_019_02_png_ccce5851.jpg
+C:\thesis\data\merged_v2\images\val\rf_aitex-yolov8__0034_019_02_png_8fd52f10.jpg

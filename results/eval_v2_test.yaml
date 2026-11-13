@@ -1,0 +1,10 @@
+names:
+- hole_tear
+- stain
+- slub_neps
+- broken_pick_end
+nc: 4
+path: C:\thesis\data\merged_v2
+test: images/test
+train: images/train
+val: images/val

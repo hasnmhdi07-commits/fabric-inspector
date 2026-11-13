@@ -1,0 +1,24 @@
+{
+ "name": "Fabric Defect Inspector",
+ "short_name": "Fabric QC",
+ "start_url": "./",
+ "scope": "./",
+ "display": "standalone",
+ "background_color": "#0f1012",
+ "theme_color": "#4f46e5",
+ "description": "AI fabric defect detection with causes and remedies - runs on your device",
+ "icons": [
+  {
+   "src": "icons/icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png",
+   "purpose": "any maskable"
+  },
+  {
+   "src": "icons/icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any maskable"
+  }
+ ]
+}

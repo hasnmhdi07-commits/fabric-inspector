@@ -1,0 +1,9 @@
+source,images,boxes,P,R,mAP50,AP50_stain,AP50_broken_pick_end,AP50_hole_tear,AP50_slub_neps
+rf_aitex-yolov8,4,8,0.018,0.25,0.005,,0.005,,
+rf_fabric-defects-77bcs,39,90,0.381,0.16,0.151,0.082,0.083,0.245,0.193
+rf_labelled-data,74,78,0.316,0.351,0.312,0.277,,0.425,0.234
+rf_fabric-defect-detection-erdgo,46,77,0.503,0.404,0.377,0.57,0.45,0.122,0.365
+rf_fabric_defect_stage2_ra_m-lfcbg,49,15,0.443,0.458,0.413,,0.386,,0.44
+rf_defect-detection-xmqul,124,252,0.885,0.721,0.805,0.878,0.643,0.894,
+fabric_stain_moratuwa,39,76,0.822,0.75,0.85,0.85,,,
+rf_fabric_defect_detection-yvkgj,11,15,0.891,0.773,0.857,0.925,,0.789,

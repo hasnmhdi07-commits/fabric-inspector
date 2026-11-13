@@ -1,0 +1,4 @@
+C:\thesis\data\merged\images\test\rf_aitex-yolov8__0006_002_01_png_5e77ae76.jpg
+C:\thesis\data\merged\images\test\rf_aitex-yolov8__0089_002_01_png_9bb74a62.jpg
+C:\thesis\data\merged\images\test\rf_aitex-yolov8__0095_010_03_png_c295e28b.jpg
+C:\thesis\data\merged\images\test\rf_aitex-yolov8__0106_010_03_png_9f356680.jpg

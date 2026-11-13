@@ -168,7 +168,8 @@ class MainActivity : Activity() {
         if (uri == null) return
         intent.action = null                                 // handle it once (also after a rotation)
         io.execute {
-            val b64 = try { readPhoto(uri) } catch (e: Exception) { null }
+            val b64 = try { readPhoto(uri) } catch (e: Exception) { android.util.Log.w("FabricInspector", "shared photo not readable: $uri", e); null }
+            android.util.Log.i("FabricInspector", "shared photo $uri -> ${b64?.length ?: 0} base64 chars")
             if (b64 != null) { shared = b64; js("window.fabricNative && window.fabricNative('shared')") }
         }
     }
@@ -270,7 +271,7 @@ class MainActivity : Activity() {
                 startForegroundService(Intent(this, BubbleService::class.java).setAction(BubbleService.ACTION_START)
                     .putExtra(BubbleService.EXTRA_CODE, resultCode).putExtra(BubbleService.EXTRA_DATA, data))
                 BubbleService.running = true
-                tellBubble(getString(R.string.running))
+                tellBubble()
             }
         }
     }

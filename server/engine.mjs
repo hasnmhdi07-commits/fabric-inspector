@@ -55,7 +55,7 @@ export async function decodeImage(buf) {
   }
 }
 
-/** Full analysis of one image. Mirrors analyse() in web_static/js/main.js, without drawing. */
+/** Full analysis of one image. Mirrors analyse() in web_static/js/app.js, without drawing. */
 export async function analyse(buf, settings = {}, { keepImage = false } = {}) {
   const rep = await analyseInner(buf, settings);
   if (!keepImage) delete rep.image;          // the decoded photo is only needed to draw the HTML result page

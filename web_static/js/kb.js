@@ -104,7 +104,7 @@ export function reportHtml(rep, maxItems = 3) {
       body += list("Likely causes", r.causes.map((c) => `<i>${esc(c.stage)}</i>: ${esc(c.cause)}`)) +
               list("Remedy", r.remedy.map(esc)) + list("Prevention", r.prevention.map(esc));
     }
-    out.push(`<details class="finding"${i === 0 && r.severity !== "acceptable" ? " open" : ""}><summary>` +
+    out.push(`<details class="finding" data-i="${r.index}" style="--i:${i}"${i === 0 && r.severity !== "acceptable" ? " open" : ""}><summary>` +
       `<span class="stripe" style="background:${SEV_COLOR[r.severity]}"></span>` +
       `<span class="title"><b>#${r.index} ${esc(r.name)}</b><span>${esc(sub)}</span></span>` +
       `<span class="pts"><span class="chip ${r.severity}">${SEV_LABEL[r.severity]}</span>${r.points != null ? r.points + " pt" : ""}</span>` +

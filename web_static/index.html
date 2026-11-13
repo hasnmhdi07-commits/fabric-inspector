@@ -5,94 +5,219 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Fabric Inspector</title>
 <meta name="description" content="AI fabric defect detection with causes and remedies - runs on your device">
-<meta name="theme-color" content="#2f7d3b">
+<meta name="theme-color" content="#f6f9f5">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/app.css">
 </head>
 <body>
-<header>
-  <div class="brand">
-    <svg class="pickglass" viewBox="0 0 54 54" aria-hidden="true">
-      <defs><radialGradient id="pg" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#86cf8d"/><stop offset=".45" stop-color="#63b96c"/><stop offset="1" stop-color="#3f8f48"/></radialGradient></defs>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <radialGradient id="pg" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#86cf8d"/><stop offset=".45" stop-color="#63b96c"/><stop offset="1" stop-color="#3f8f48"/></radialGradient>
+    <symbol id="i-glass" viewBox="0 0 54 54">
       <circle cx="27" cy="27" r="27" fill="url(#pg)"/>
       <circle cx="27" cy="27" r="17" fill="rgba(255,255,255,.10)" stroke="#fff" stroke-width="2.2"/>
       <path d="M14 27h26M27 14v26" stroke="rgba(255,255,255,.55)" stroke-width="1"/>
       <path d="M17 27v-5M21 27v-3M25 27v-3M29 27v-3M33 27v-3M37 27v-5" stroke="#fff" stroke-width="1.1"/>
       <path d="M39.5 39.5l6 6" stroke="#f0bf45" stroke-width="4" stroke-linecap="round"/>
-    </svg>
-    <h1>Fabric Inspector</h1>
-  </div>
-  <p>Photograph fabric to find defects, their severity, likely causes and remedies. The AI runs on your device; photos are not uploaded.</p>
-</header>
+    </symbol>
+    <symbol id="i-scan" viewBox="0 0 24 24"><path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16M3 12h18"/></symbol>
+    <symbol id="i-history" viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1M3.5 4.5v4h4M12 7.5V12l3 2"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.4-2h6.2l1.4 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="13" r="3.5"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15.5V4.5M7.5 8.5 12 4l4.5 4.5M4.5 15v3A1.5 1.5 0 0 0 6 19.5h12a1.5 1.5 0 0 0 1.5-1.5v-3"/></symbol>
+    <symbol id="i-area" viewBox="0 0 24 24"><path d="M4 9V5.5A1.5 1.5 0 0 1 5.5 4H9M15 4h3.5A1.5 1.5 0 0 1 20 5.5V9M20 15v3.5a1.5 1.5 0 0 1-1.5 1.5H15M9 20H5.5A1.5 1.5 0 0 1 4 18.5V15"/><circle cx="12" cy="12" r="2.2"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24"><circle cx="6.5" cy="12" r="2.2"/><circle cx="17" cy="6" r="2.2"/><circle cx="17" cy="18" r="2.2"/><path d="m8.5 11 6.5-3.8M8.5 13l6.5 3.8"/></symbol>
+    <symbol id="i-doc" viewBox="0 0 24 24"><path d="M7 3.5h7l4 4V19A1.5 1.5 0 0 1 16.5 20.5h-9.5A1.5 1.5 0 0 1 5.5 19V5A1.5 1.5 0 0 1 7 3.5zM14 3.5v4h4M8.5 12.5h7M8.5 16h5"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="i-flip" viewBox="0 0 24 24"><path d="M4.5 11a7.5 7.5 0 0 1 13-4.5L19.5 8.5M19.5 4.5v4h-4M19.5 13a7.5 7.5 0 0 1-13 4.5L4.5 15.5M4.5 19.5v-4h4"/></symbol>
+    <symbol id="i-torch" viewBox="0 0 24 24"><path d="M13 3 6 13.5h5L10 21l8-11h-5.5z"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M5 7h14M10 7V4.5h4V7M7 7l.8 12a1.5 1.5 0 0 0 1.5 1.4h5.4a1.5 1.5 0 0 0 1.5-1.4L17 7"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M14.5 5.5 8 12l6.5 6.5"/></symbol>
+  </defs>
+</svg>
 
-<main>
-  <section class="card" id="inputCard">
-    <div id="preview" class="preview"><span>Take or choose a fabric photo<br><small>On a PC you can also drag and drop or paste a photo</small></span></div>
-    <div class="row">
-      <label class="btn primary">Take photo<input id="fileCam" type="file" accept="image/*" capture="environment" hidden></label>
-      <label class="btn">Choose photo<input id="fileAny" type="file" accept="image/*" hidden></label>
+<div id="app" data-screen="scan">
+  <header class="top">
+    <a class="brand" href="./" aria-label="Fabric Inspector, home">
+      <svg class="pickglass"><use href="#i-glass"/></svg>
+      <span>Fabric Inspector</span>
+    </a>
+    <nav class="nav" aria-label="Main">
+      <button class="navbtn active" data-go="scan"><svg class="ic"><use href="#i-scan"/></svg><span>Scan</span></button>
+      <button class="navbtn" data-go="history"><svg class="ic"><use href="#i-history"/></svg><span>History</span><i id="histCount" class="count" hidden></i></button>
+      <button class="navbtn" data-go="settings"><svg class="ic"><use href="#i-settings"/></svg><span>Settings</span></button>
+    </nav>
+    <div id="engine" class="engine loading" role="status" aria-live="polite"><i class="dot"></i><span id="status">Starting…</span><b id="enginePct" class="mono"></b></div>
+  </header>
+
+  <!-- ============================================================ SCAN -->
+  <main id="scr-scan" class="screen active" data-state="empty">
+    <section class="stagecol">
+      <div id="stage" class="stage">
+        <!-- empty state -->
+        <div class="empty" id="drop">
+          <div class="lens" aria-hidden="true">
+            <svg class="weave" viewBox="0 0 120 120"><defs><pattern id="wv" width="12" height="12" patternUnits="userSpaceOnUse"><path d="M0 3h12M0 9h12" stroke="#b9d7bb" stroke-width="2.4"/><path d="M3 0v12M9 0v12" stroke="#d3e8d4" stroke-width="2.4"/></pattern></defs><circle cx="60" cy="60" r="58" fill="url(#wv)"/><path class="flaw" d="M38 66c8-6 14 4 22-2s12-8 22-3" fill="none" stroke="#cf5a24" stroke-width="3" stroke-linecap="round"/></svg>
+            <i class="sweep"></i><i class="ring"></i>
+          </div>
+          <h2>Check a fabric for defects</h2>
+          <p>Point the camera at the fabric or choose a photo. You get the defects, their severity, likely causes and remedies.</p>
+          <div class="cta">
+            <button id="btnCamera" class="btn primary big"><svg class="ic"><use href="#i-camera"/></svg>Open camera</button>
+            <label class="btn big"><svg class="ic"><use href="#i-upload"/></svg>Upload photo<input id="fileAny" type="file" accept="image/*" hidden></label>
+          </div>
+          <small class="hint desk">On a computer you can also drop a photo here or paste one with Ctrl+V.</small>
+          <div class="examples">
+            <span>Or try an example</span>
+            <button class="example" data-src="examples/stain_example.jpg"><img src="examples/stain_example.jpg" alt="stain example" loading="lazy"></button>
+            <button class="example" data-src="examples/hole_example.jpg"><img src="examples/hole_example.jpg" alt="hole example" loading="lazy"></button>
+            <button class="example" data-src="examples/skew_example.jpg"><img src="examples/skew_example.jpg" alt="skew example" loading="lazy"></button>
+          </div>
+        </div>
+
+        <!-- live camera -->
+        <div class="cam" id="cam">
+          <video id="video" playsinline muted></video>
+          <div class="reticle" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+          <p class="camhint">Fabric flat, camera straight above, even light</p>
+          <div class="cambar">
+            <button id="camTorch" class="round" aria-label="Torch" hidden><svg class="ic"><use href="#i-torch"/></svg></button>
+            <button id="camShutter" class="shutter" aria-label="Take photo"><i></i></button>
+            <button id="camFlip" class="round" aria-label="Switch camera"><svg class="ic"><use href="#i-flip"/></svg></button>
+          </div>
+          <button id="camClose" class="round camclose" aria-label="Close camera"><svg class="ic"><use href="#i-close"/></svg></button>
+          <i class="flash" id="flash"></i>
+        </div>
+
+        <!-- photo + findings overlay -->
+        <div class="photo" id="photo">
+          <div class="frame" id="frame">
+            <div id="view" class="view"></div>
+            <div id="boxes" class="boxes"></div>
+            <div id="sel" class="sel" hidden><i></i><i></i><i></i><i></i></div>
+            <div class="scanfx" aria-hidden="true"><i class="beam"></i><i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="toolbar" id="toolbar">
+        <div id="tabs" class="tabs"></div>
+        <span class="grow"></span>
+        <button id="btnArea" class="tool" aria-pressed="false"><svg class="ic"><use href="#i-area"/></svg><span>Select area</span></button>
+        <button id="btnWhole" class="tool" hidden><svg class="ic"><use href="#i-back"/></svg><span>Whole photo</span></button>
+      </div>
+      <div class="areabar" id="areabar" hidden>
+        <span id="areaHint">Drag over the part of the fabric you want to check.</span>
+        <button id="areaCancel" class="btn sm">Cancel</button>
+        <button id="areaGo" class="btn primary sm" disabled>Analyse area</button>
+      </div>
+
+      <div class="checks" role="group" aria-label="Checks">
+        <label class="chipcheck"><input type="checkbox" id="chkDef" checked><span>Defects (AI)</span></label>
+        <label class="chipcheck"><input type="checkbox" id="chkShade"><span>Shade ΔE</span></label>
+        <label class="chipcheck"><input type="checkbox" id="chkSkew"><span>Bow / skew</span></label>
+      </div>
+    </section>
+
+    <section class="panel" id="results" hidden>
+      <div id="verdict"></div>
+      <div id="report" class="report"></div>
+      <div class="actions">
+        <button id="btnNew" class="btn primary"><svg class="ic"><use href="#i-scan"/></svg>New scan</button>
+        <button id="btnShare" class="btn"><svg class="ic"><use href="#i-share"/></svg>Share</button>
+        <button id="download" class="btn"><svg class="ic"><use href="#i-doc"/></svg>Report</button>
+      </div>
+      <p class="mut" id="meta"></p>
+    </section>
+
+    <section class="panel side" id="sidecards">
+      <div class="nativeonly card bubblecard" hidden>
+        <svg class="pickglass"><use href="#i-glass"/></svg>
+        <div><b>Floating bubble</b><small id="bubbleState">Check fabric shown in any other app: camera, gallery, WhatsApp, a PDF.</small></div>
+        <button id="bubbleToggle" class="btn sm primary">Start</button>
+      </div>
+      <a class="webonly card link" href="download/FabricInspector.apk" id="apkLink">
+        <svg class="pickglass"><use href="#i-glass"/></svg>
+        <div><b>Android app with floating bubble</b><small>Checks fabric shown in any other app. Download the APK.</small></div>
+      </a>
+      <a class="webonly card link" href="iphone.html">
+        <svg class="pickglass"><use href="#i-glass"/></svg>
+        <div><b>iPhone: check anything on screen</b><small>Set up AssistiveTouch in two minutes.</small></div>
+      </a>
+      <div class="card tips">
+        <b>For a reliable result</b>
+        <ul><li>Lay the fabric flat and hold the camera straight above it.</li><li>Use even daylight, without shadows or flash glare.</li><li>Put a ruler in the photo to get real sizes and 4-point scores.</li></ul>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============================================================ HISTORY -->
+  <main id="scr-history" class="screen">
+    <div class="pagehead"><h2>History</h2><button id="histClear" class="btn sm" hidden><svg class="ic"><use href="#i-trash"/></svg>Clear all</button></div>
+    <p class="sec">Your last 60 checks, stored only on this device.</p>
+    <div id="histList" class="histlist"></div>
+    <div id="histEmpty" class="blank"><svg class="ic big"><use href="#i-history"/></svg><b>No checks yet</b><span>Each fabric you check is kept here so you can open it again.</span><button class="btn primary" data-go="scan">Start a scan</button></div>
+  </main>
+
+  <!-- ============================================================ SETTINGS -->
+  <main id="scr-settings" class="screen">
+    <div class="pagehead"><h2>Settings</h2></div>
+    <div class="setgrid">
+      <section class="card set">
+        <h3>Detection</h3>
+        <label class="field">Detection confidence <b id="confVal" class="mono">0.23</b>
+          <input type="range" id="conf" min="0.05" max="0.9" step="0.01" value="0.23"></label>
+        <small>Lower finds more defects but gives more false alarms.</small>
+        <label class="field">Image scale (pixels per mm)<input type="number" id="pxmm" min="0" step="0.1" value="0"></label>
+        <small>0 = unknown. With a ruler in the photo: pixels between two cm marks ÷ 10. Gives ASTM D5430 points.</small>
+        <label class="switch"><input type="checkbox" id="keepHistory" checked><span>Keep a history of checks on this device</span></label>
+      </section>
+      <section class="card set">
+        <h3>Shade and bow / skew</h3>
+        <label class="field">Shade tolerance ΔE CMC(2:1)<input type="number" id="tol" min="0.2" max="5" step="0.1" value="1.0"></label>
+        <label class="field">Skew limit (%)<input type="number" id="skewLim" min="0.5" max="10" step="0.5" value="3"></label>
+        <label class="field">Bow limit (%)<input type="number" id="bowLim" min="0.5" max="10" step="0.5" value="2"></label>
+        <label class="field">Weft direction in photo<select id="weft"><option>horizontal</option><option>vertical</option></select></label>
+        <small>Only for flat, evenly lit photos taken from straight above.</small>
+      </section>
+      <section class="card set">
+        <h3>App</h3>
+        <div class="nativeonly row2" hidden><span>Floating bubble over other apps</span><button id="bubbleToggle2" class="btn sm primary">Start</button></div>
+        <div class="row2" id="installRow" hidden><span>Install on this device (works offline)</span><button id="install" class="btn sm primary">Install</button></div>
+        <div class="row2"><span>AI engine</span><b id="engineInfo" class="mono">…</b></div>
+        <div class="row2"><span>Saved checks</span><b id="histInfo" class="mono">0</b></div>
+        <button id="resetSettings" class="btn sm">Reset settings</button>
+      </section>
+      <section class="card set about">
+        <h3>About</h3>
+        <p><b>How it works.</b> 1) A YOLO11 neural network detects hole/tear, stain, slub/neps and broken pick/end.
+        2) Shade: CIELAB colour difference ΔE CMC(2:1) with a heat map. 3) Bow/skew: weft-line angle across the width
+        (ASTM D3882 definitions). 4) A rule-based knowledge base (4-point system ASTM D5430) gives severity, likely
+        causes, remedy and prevention. It never invents causes.</p>
+        <p><b>Privacy.</b> In this app the AI runs on your device; photos are not uploaded. Only the floating bubble
+        and the iPhone shortcut send the selected area to the analysis server, which does not store it.</p>
+        <p><b>Data.</b> Trained on public datasets: Fabric Stain Dataset (Univ. of Moratuwa, CC0) and Roboflow Universe
+        projects (CC BY 4.0) by aitex-data-set-waiandt, fault-annotations, pulak-deb-roy, defects-zxmr5, defect-dataset,
+        projectcollege-msi80, fabric-defect-detection-6xxtk. Example images: Fabric Stain Dataset (CC0), defects-zxmr5
+        (CC BY 4.0), synthetic.</p>
+        <p><i>Thesis prototype: decision support for a trained inspector, not a replacement.</i></p>
+      </section>
     </div>
-    <fieldset class="checks">
-      <legend>Checks</legend>
-      <label><input type="checkbox" id="chkDef" checked> Defects (AI)</label>
-      <label><input type="checkbox" id="chkShade"> Shade ΔE</label>
-      <label><input type="checkbox" id="chkSkew"> Bow / skew</label>
-      <small>Shade and bow/skew: only for flat, evenly lit photos taken from straight above.</small>
-    </fieldset>
-    <details class="box">
-      <summary>Settings</summary>
-      <label>Detection confidence <b id="confVal" class="mono">0.23</b>
-        <input type="range" id="conf" min="0.05" max="0.9" step="0.01" value="0.23"></label>
-      <small>Lower finds more defects but gives more false alarms.</small>
-      <label>Image scale (pixels per mm, 0 = unknown)<input type="number" id="pxmm" min="0" step="0.1" value="0"></label>
-      <small>With a ruler in the photo: pixels between two cm marks ÷ 10. Gives ASTM D5430 points.</small>
-      <label>Shade tolerance ΔE CMC(2:1)<input type="number" id="tol" min="0.2" max="5" step="0.1" value="1.0"></label>
-      <label>Skew limit (%)<input type="number" id="skewLim" min="0.5" max="10" step="0.5" value="3"></label>
-      <label>Bow limit (%)<input type="number" id="bowLim" min="0.5" max="10" step="0.5" value="2"></label>
-      <label>Weft direction in photo<select id="weft"><option>horizontal</option><option>vertical</option></select></label>
-    </details>
-    <button id="analyse" class="btn primary big" disabled>Analyse</button>
-    <div class="examples">
-      <span>Try an example:</span>
-      <button class="example" data-src="examples/stain_example.jpg"><img src="examples/stain_example.jpg" alt="stain example"></button>
-      <button class="example" data-src="examples/hole_example.jpg"><img src="examples/hole_example.jpg" alt="hole example"></button>
-      <button class="example" data-src="examples/skew_example.jpg"><img src="examples/skew_example.jpg" alt="skew example"></button>
-    </div>
-  </section>
+  </main>
 
-  <section class="card" id="results" hidden>
-    <div id="verdict"></div>
-    <div id="tabs" class="tabs"></div>
-    <div id="view" class="view"></div>
-    <div id="report" class="report"></div>
-    <button id="download" class="btn" hidden>Download report (.txt)</button>
-  </section>
-</main>
-
-<footer>
-  <p id="status" role="status">Starting…</p>
-  <button id="install" class="btn" hidden>Install app</button>
-  <p><a href="download/FabricInspector.apk">Android: download the floating bubble app (APK, 0.9 MB)</a></p>
-  <p><a href="iphone.html">iPhone: check fabric anywhere on the screen with AssistiveTouch</a></p>
-  <details class="box">
-    <summary>About this app</summary>
-    <p><b>How it works.</b> 1) A YOLO11 neural network detects hole/tear, stain, slub/neps and broken pick/end.
-    2) Shade: CIELAB colour difference ΔE CMC(2:1) with a heat map. 3) Bow/skew: weft-line angle across the width
-    (ASTM D3882 definitions). 4) A rule-based knowledge base (4-point system ASTM D5430) gives severity, likely
-    causes, remedy and prevention. It never invents causes.</p>
-    <p><b>Photo tips.</b> Fabric flat, camera straight above, even daylight, no shadows. Add a ruler for real sizes.</p>
-    <p><b>Data.</b> Trained on public datasets: Fabric Stain Dataset (Univ. of Moratuwa, CC0) and Roboflow Universe
-    projects (CC BY 4.0) by aitex-data-set-waiandt, fault-annotations, pulak-deb-roy, defects-zxmr5, defect-dataset,
-    projectcollege-msi80, fabric-defect-detection-6xxtk. Example images: Fabric Stain Dataset (CC0), defects-zxmr5
-    (CC BY 4.0), synthetic.</p>
-    <p><i>Thesis prototype: decision support for a trained inspector, not a replacement.</i></p>
-  </details>
-</footer>
-<script type="module" src="js/main.js"></script>
+  <nav class="tabbar" aria-label="Main">
+    <button class="navbtn active" data-go="scan"><svg class="ic"><use href="#i-scan"/></svg><span>Scan</span></button>
+    <button class="navbtn" data-go="history"><svg class="ic"><use href="#i-history"/></svg><span>History</span></button>
+    <button class="navbtn" data-go="settings"><svg class="ic"><use href="#i-settings"/></svg><span>Settings</span></button>
+  </nav>
+  <input id="fileCam" type="file" accept="image/*" capture="environment" hidden>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</div>
+<script type="module" src="js/app.js"></script>
 </body>
 </html>

@@ -4,7 +4,7 @@ import json, subprocess, sys, time, urllib.request
 import websocket
 
 URL = sys.argv[1].rstrip("/") + "/"
-for f, want in [("", "text/html"), ("js/main.js", "javascript"), ("ort/ort.wasm.min.mjs", "javascript"),
+for f, want in [("", "text/html"), ("js/app.js", "javascript"), ("ort/ort.wasm.min.mjs", "javascript"),
                 ("ort/ort-wasm-simd-threaded.wasm", "application/wasm"), ("model/best.onnx", ""),
                 ("manifest.webmanifest", ""), ("sw.js", "javascript"), ("kb.json", "json")]:
     for attempt in range(30):

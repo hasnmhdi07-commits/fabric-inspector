@@ -140,14 +140,15 @@ try:
         js("document.getElementById('chkShade').checked = true; document.querySelector('.example[data-src*=stain]').click(); true")
         for _ in range(200):
             time.sleep(0.2)
-            if js("!document.getElementById('results').hidden && document.getElementById('status').textContent.includes('defect')"): break
-        js("document.getElementById('results').scrollIntoView(); true")
+            if js("!document.getElementById('results').hidden && !window.fabricApp.busy()"): break
+        time.sleep(1.5)                                             # let the result animations finish
+        js("indexedDB.deleteDatabase('fabric-inspector'); window.scrollTo(0, 0); true")
         full_h = js("document.documentElement.scrollHeight")
         cdp("Emulation.setDeviceMetricsOverride", width=w, height=min(full_h, 4000), deviceScaleFactor=1, mobile=mobile)
         time.sleep(0.5)
         png = cdp("Page.captureScreenshot", format="png", captureBeyondViewport=True)["data"]
         (OUT / f"{name}.png").write_bytes(base64.b64decode(png))
-        print(f"screenshot {name}.png ({w}x{min(full_h, 4000)}); status: {js('document.getElementById(`status`).textContent')}")
+        print(f"screenshot {name}.png ({w}x{min(full_h, 4000)}); result: {js('document.querySelector(`#verdict b`).textContent')}")
     print("console errors/warnings:", console or "none")
 finally:
     edge.kill(); srv.kill()

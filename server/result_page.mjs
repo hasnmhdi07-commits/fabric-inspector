@@ -8,7 +8,7 @@ import sharp from "sharp";
 import { verdictHtml, reportHtml } from "../web_static/js/kb.js";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const CSS = readFileSync(path.resolve(HERE, "..", "web_static", "css", "style.css"), "utf8");
+const CSS = readFileSync(path.resolve(HERE, "..", "web_static", "css", "app.css"), "utf8");
 const CLASS_COLOR = { hole_tear: "#2a78d6", stain: "#eb6834", slub_neps: "#1baf7a", broken_pick_end: "#eda100" };
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const PAGE_MAX = 1000;       // the photo inside the page is reduced to keep the answer small

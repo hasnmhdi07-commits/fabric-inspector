@@ -208,7 +208,7 @@ button, input, select { font: inherit; color: inherit; }
 a.card.link, .bubblecard { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; text-decoration: none; color: var(--ink); transition: transform .2s var(--ease), border-color .2s, box-shadow .2s; }
 a.card.link::after { content: "›"; font-size: 22px; color: var(--line-2); transition: transform .2s; }
 a.card.link:hover { border-color: var(--fern-swatch); box-shadow: var(--shadow); transform: translateY(-1px); } a.card.link:hover::after { transform: translateX(3px); color: var(--fern); }
-.card b { display: block; } .card small { color: var(--ink-2); display: block; line-height: 1.35; }
+.side .card b { display: block; } .side .card small { color: var(--ink-2); display: block; line-height: 1.35; }
 .tips ul { margin: 6px 0 0; padding-left: 18px; color: var(--ink-2); font-size: 13.5px; display: grid; gap: 3px; }
 [data-state=photo] #sidecards, [data-state=camera] #sidecards { display: none; }
 body.native .webonly { display: none !important; }

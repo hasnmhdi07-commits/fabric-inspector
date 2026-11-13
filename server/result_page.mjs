@@ -16,6 +16,7 @@ const PAGE_MAX = 1000;       // the photo inside the page is reduced to keep the
 const shell = (body) => `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Fabric Check</title>
 <style>${CSS}
+*, *::before, *::after { animation: none !important; }   /* static page: nothing may depend on an animation having run */
 body { padding: 12px 14px 28px; background: var(--surface); }
 .sheet { max-width: 640px; margin: 0 auto; display: grid; gap: 10px; }
 .brandline { font: 700 13px var(--f-display); letter-spacing: .04em; color: var(--ink-2); }

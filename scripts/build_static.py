@@ -81,8 +81,8 @@ for size in (192, 512):
 # 7. service worker: cache everything for offline use; cache name changes when any file changes
 all_files = sorted(p.relative_to(OUT).as_posix() for p in OUT.rglob("*")
                    if p.is_file() and p.name not in ("sw.js", "README.md", ".gitattributes"))
-files = [f for f in all_files if not f.startswith("ort-legacy/")]   # legacy engine: cached only when used
-h = hashlib.sha1(b"sw-logic-v3")      # bump when the service-worker logic below changes
+files = [f for f in all_files if not f.startswith(("ort-legacy/", "download/"))]   # legacy engine: cached only when used
+h = hashlib.sha1(b"sw-logic-v4")      # bump when the service-worker logic below changes
 for f in all_files:
     h.update((OUT / f).read_bytes())
 version = h.hexdigest()[:10]
@@ -93,7 +93,17 @@ version = h.hexdigest()[:10]
 const CACHE = "fdi-{version}";
 const FILES = {json.dumps(files)};
 const clean = (r) => (r && r.redirected ? r.blob().then((b) => new Response(b, {{ status: 200, headers: r.headers }})) : r);
-self.addEventListener("install", (e) => e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting())));
+// one file at a time with retries: on a weak mobile connection a single failed download must not undo the rest
+const grab = async (c, f, tries = 4) => {{
+  for (let i = 1; ; i++) {{
+    try {{
+      const r = await fetch(f, {{ cache: "no-cache" }});
+      if (!r.ok) throw new Error(f + " " + r.status);
+      return await c.put(f, r);
+    }} catch (err) {{ if (i >= tries) throw err; await new Promise((ok) => setTimeout(ok, 800 * i)); }}
+  }}
+}};
+self.addEventListener("install", (e) => e.waitUntil(caches.open(CACHE).then(async (c) => {{ for (const f of FILES) await grab(c, f); }}).then(() => self.skipWaiting())));
 self.addEventListener("activate", (e) => e.waitUntil(caches.keys().then((ks) =>
   Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim())));
 self.addEventListener("fetch", (e) => {{

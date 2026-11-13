@@ -1,0 +1,19 @@
+# Only the API (api/, server/) and the web app (web_static/) are deployed.
+data
+upload
+runs
+venv
+models
+results
+deploy
+notebooks
+scripts
+src
+tests
+thesis_docs
+web
+.vscode
+hf_token.txt
+roboflow_key.txt
+requirements.txt
+run_app.bat

@@ -1,0 +1,17 @@
+{
+  "name": "fabric-inspector",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Fabric Inspector v2: stateless analysis API (same JavaScript engine as the browser app)",
+  "scripts": {
+    "start": "node server/local.mjs",
+    "test": "node server/test_api.mjs",
+    "spike": "node server/spike.mjs"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "multer": "^2.0.2",
+    "sharp": "^0.35.5"
+  }
+}

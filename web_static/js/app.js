@@ -605,7 +605,7 @@ async function init() {
   const bytes = await fetchModel("model/best.onnx");
   status("Starting AI", "loading");
   detector = await Detector.create(bytes);
-  $("engineInfo").textContent = detector.backend.startsWith("compat") ? "compatibility (slower)" : "fast (SIMD)";
+  $("engineInfo").textContent = (detector.backend.startsWith("compat") ? "compatibility (slower)" : "fast (SIMD)") + ` · model ${detector.size} px`;
   status("Ready");
 }
 

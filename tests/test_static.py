@@ -144,6 +144,7 @@ try:
         time.sleep(1.5)                                             # let the result animations finish
         js("indexedDB.deleteDatabase('fabric-inspector'); window.scrollTo(0, 0); true")
         full_h = js("document.documentElement.scrollHeight")
+        if not mobile: print(f"desktop page height {full_h} for a {h} px window:", "PASS fits without scrolling" if full_h <= h + 1 else "FAIL page scrolls")
         cdp("Emulation.setDeviceMetricsOverride", width=w, height=min(full_h, 4000), deviceScaleFactor=1, mobile=mobile)
         time.sleep(0.5)
         png = cdp("Page.captureScreenshot", format="png", captureBeyondViewport=True)["data"]

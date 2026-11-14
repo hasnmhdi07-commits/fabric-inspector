@@ -381,7 +381,7 @@ body.pipbody[data-view="bubble"] { display: grid; place-items: center; min-heigh
 
 /* wide screens: both columns have the same fixed height; the findings scroll inside their box */
 @media (min-width: 900px) {
-  #scr-scan { --colh: max(460px, calc(100dvh - 96px)); }
+  #scr-scan { --colh: max(460px, calc(100dvh - 126px)); }
   #scr-scan[data-state=photo] { --maxh: calc(var(--colh) - 150px); }
   #scr-scan[data-state=photo] .stagecol { height: var(--colh); grid-template-rows: minmax(0, 1fr) auto auto; }
   #scr-scan[data-state=photo] .stage { display: grid; min-height: 0; }

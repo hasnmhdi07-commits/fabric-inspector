@@ -17,13 +17,17 @@ const ICON = {
   gallery: SVG('<rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m4.5 17.5 5-5 3.5 3.5 2.5-2.5 4 4"/>'),
   camera: SVG('<path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.4-2h6.2l1.4 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="13" r="3.5"/>'),
   back: SVG('<path d="M14.5 5.5 8 12l6.5 6.5"/>'),
+  float: SVG('<rect x="3.5" y="5" width="17" height="14" rx="2"/><rect x="11.5" y="11" width="7" height="6" rx="1"/>'),
+  min: SVG('<path d="m6 6 12 12M18 6 6 18"/>'),
 };
 let glassN = 0;
 const glass = (id = "bpg" + ++glassN) => `<svg viewBox="0 0 54 54" aria-hidden="true"><defs><radialGradient id="${id}" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#86cf8d"/><stop offset=".45" stop-color="#63b96c"/><stop offset="1" stop-color="#3f8f48"/></radialGradient></defs>
 <circle cx="27" cy="27" r="27" fill="url(#${id})"/><circle cx="27" cy="27" r="17" fill="rgba(255,255,255,.10)" stroke="#fff" stroke-width="2.2"/>
 <path d="M14 27h26M27 14v26" stroke="rgba(255,255,255,.55)" stroke-width="1"/><path d="M17 27v-5M21 27v-3M25 27v-3M29 27v-3M33 27v-3M37 27v-5" stroke="#fff" stroke-width="1.1"/>
 <path d="M39.5 39.5l6 6" stroke="#f0bf45" stroke-width="4" stroke-linecap="round"/></svg>`;
+const SMALL = 96;                // the small floating bubble (the browser may make it a little larger)
 const SEV_DOT = { minor: "#a86f12", major: "#cf5a24", critical: "#c23a3a" };
+const dotColor = (r) => SEV_DOT[r.verdict.severity] || (r.verdict.state === "none" ? "#63b96c" : "#9aa59d");
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -34,70 +38,77 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 export class Bubble {
   constructor(app) {
     this.app = app;
-    this.state = "off";          // off | on | hidden (hidden: the screen share stays, the bubble is out of sight)
-    this.mode = null;            // pip | page
-    this.pip = null; this.btn = null; this.back = null;
+    this.state = "off";          // off | on   (the switch in Settings)
+    this.pip = null;             // the floating window, when open
+    this.btn = null; this.back = null;
+    this.pageHidden = false;     // "Hide bubble" on the in-page bubble (comes back after a reload)
     this.stream = null; this.video = null;
     this.last = null;            // the newest report (any source), shown at the top of the menu
+    this.unseen = false;         // a result arrived while the floating bubble was small
     this.busy = false;
     this.closingOnPurpose = false;
   }
 
-  // ------------------------------------------------------------------ start / hide / stop
-  /** Must be called from a click (the browser only opens the floating window after a user action). */
-  async start() {
-    if (canFloat) {
-      try { await this.openPip(); this.mode = "pip"; this.set("on"); return; }
-      catch (e) { console.warn("floating window not available", e); }
-    }
-    this.mode = "page"; this.showPageBubble(); this.set("on");
-  }
+  get mode() { return this.pip ? "pip" : this.state === "on" ? "page" : null; }
 
-  hide() {
-    if (this.mode === "pip") this.closePip(); else this.removePageBubble();
-    this.set("hidden");
+  // ------------------------------------------------------------------ on / off (Settings switch)
+  /** Switch on: the bubble appears on the page edge. */
+  async start() {
+    this.pageHidden = false;
+    this.set("on");
+    this.showPageBubble();
   }
 
   stop() {
-    if (this.mode === "pip") this.closePip(); else this.removePageBubble();
-    this.stopStream();
-    this.mode = null; this.set("off");
+    this.closePip(); this.removePageBubble(); this.stopStream();
+    this.set("off");
+  }
+
+  /** "Hide bubble": the floating window closes; the small bubble in the page brings it back. */
+  hide() {
+    if (this.pip) { this.closePip(); this.showPageBubble(); }
+    else { this.pageHidden = true; this.removePageBubble(); this.app.toast("Bubble hidden. It comes back when you reopen the app, or switch it off and on in Settings.", 5000); }
+    this.app.onChange(this.state);
   }
 
   set(state) {
     this.state = state;
-    try { localStorage.setItem("fi-bubble", state === "on" && this.mode === "page" ? "page" : ""); } catch { /* private mode */ }
+    try { localStorage.setItem("fi-bubble-on", state === "on" ? "1" : ""); } catch { /* private mode */ }
     this.app.onChange(state);
   }
 
-  /** The in-page bubble comes back after a reload (a floating window cannot open without a click). */
+  /** On page load: the bubble sits on the page edge (on by default; a floating window needs a click). */
   restore() {
-    let saved = "";
-    try { saved = localStorage.getItem("fi-bubble") || ""; } catch { /* ignore */ }
-    if (saved === "page" && !canFloat) { this.mode = "page"; this.showPageBubble(); this.set("on"); }
+    let on = "1";                                         // on by default
+    try { const v = localStorage.getItem("fi-bubble-on"); if (v !== null) on = v; } catch { /* ignore */ }
+    if (on) { this.state = "on"; this.showPageBubble(); this.app.onChange("on"); }
   }
 
   /** Called by the app after every check, whatever started it. */
   setLast(report) {
     this.last = report;
-    if (this.btn) { const dot = this.btn.querySelector("i"), c = report && SEV_DOT[report.verdict.severity]; dot.hidden = !c; dot.style.background = c || ""; }
-    if (this.pip && !this.busy && this.pip.document.body.dataset.view === "menu") this.renderMenu();
+    const c = (report && SEV_DOT[report.verdict.severity]) || "";
+    if (this.btn) { const dot = this.btn.querySelector("i"); dot.hidden = !c; dot.style.background = c; }
+    if (!this.pip || this.busy) return;
+    const view = this.pip.document.body.dataset.view;
+    if (view === "menu") this.renderMenu();
+    if (view === "bubble") { this.unseen = true; this.renderBubble(); }
   }
 
   // ------------------------------------------------------------------ the menu (same items as the Android bubble)
   menuHtml() {
     const r = this.last;
-    const last = r ? `<button class="qa-last" data-a="last"><span class="qa-dot" style="background:${SEV_DOT[r.verdict.severity] || (r.verdict.state === "none" ? "#63b96c" : "#9aa59d")}"></span>` +
+    const last = r ? `<button class="qa-last" data-a="last"><span class="qa-dot" style="background:${dotColor(r)}"></span>` +
       `<span><small>Last check</small><b>${esc(r.verdict.title)}</b></span><span class="qa-chev">›</span></button>` : "";
     const areaSub = canCapture ? "" : `<small>in the open photo</small>`;
-    return `<div class="qa-head">${glass()}<b>Quick actions</b></div>${last}
+    return `<div class="qa-head">${glass()}<b>Quick actions</b><button class="qa-min" data-a="collapse" aria-label="Close the menu" title="Close">${ICON.min}</button></div>${last}
       <div class="qa-grid">
         <button class="qa-tile" data-a="area"><i style="--c:#2f7d3b">${ICON.area}</i><span>Select area${areaSub}</span></button>
         <button class="qa-tile" data-a="gallery"><i style="--c:#2a78d6">${ICON.gallery}</i><span>Photo from gallery</span></button>
         <button class="qa-tile" data-a="camera"><i style="--c:#e7b53a;--f:#2b2205">${ICON.camera}</i><span>Take photo</span></button>
         <button class="qa-tile" data-a="app"><i class="glass">${glass()}</i><span>Open Fabric Inspector</span></button>
       </div>
-      <p class="qa-msg" hidden></p>
+      <p class="qa-msg" hidden></p>${canFloat && !this.pip ? `<button class="qa-float" data-a="float">${ICON.float}Float over other windows</button>` : ""}
       <div class="qa-row"><button data-a="hide">Hide bubble</button><button data-a="off">Turn off</button></div>`;
   }
 
@@ -120,12 +131,15 @@ export class Bubble {
     this.message("");
     if (a === "off") return this.stop();
     if (a === "hide") return this.hide();
+    if (a === "collapse") return inPip ? this.collapse() : this.closePanel();
+    if (a === "expand") return this.expand();
+    if (a === "float") { this.closePanel(); return this.openPip(true); }
+    if (a === "menu") return this.renderMenu();
     if (a === "area") return this.selectArea(win);
     if (a === "gallery") return inPip ? this.galleryInPip() : (this.closePanel(), this.app.pickFile());
+    if (a === "last" && inPip && this.last) return this.renderResult(this.last);
     if (a === "camera" || a === "app" || a === "last") {
-      if (inPip && a === "last" && this.last) return this.renderResult(this.last);
-      this.closePanel();
-      if (inPip) this.focusApp();
+      if (inPip) { this.collapse(); this.focusApp(); } else this.closePanel();
       return a === "camera" ? this.app.camera() : this.app.open(a === "last");
     }
   }
@@ -133,22 +147,28 @@ export class Bubble {
   /** From the floating window back to the app tab. */
   focusApp() {
     try { window.focus(); } catch { /* not allowed */ }
-    setTimeout(() => { if (document.hidden && this.pip) this.message("The result is in the Fabric Inspector tab. Use “Back to tab” at the top of this window."); }, 500);
   }
 
   // ------------------------------------------------------------------ floating window (Chrome / Edge on a computer)
-  async openPip() {
-    const w = await window.documentPictureInPicture.requestWindow({ width: 340, height: 460 });
+  // Small = only the bubble; a click makes it large with the quick actions. A website cannot draw a round
+  // window over other apps, so the small bubble is the smallest window the browser allows.
+  async openPip(large = false) {
+    let w;
+    try { w = await window.documentPictureInPicture.requestWindow({ width: large ? 340 : SMALL, height: large ? 470 : SMALL, preferInitialWindowPlacement: true }); }
+    catch (e) { console.warn("floating window not available", e); return false; }
     copyStyles(document, w.document);
     w.document.title = "Fabric Inspector";
     w.document.body.className = "pipbody";
     this.pip = w;
+    this.removePageBubble();
     w.addEventListener("pagehide", () => {
       if (this.pip !== w) return;
       this.pip = null;
-      if (!this.closingOnPurpose && this.state === "on") { this.stopStream(); this.mode = null; this.set("off"); }   // closed with its X
+      if (!this.closingOnPurpose && this.state === "on") { this.showPageBubble(); this.app.onChange(this.state); }   // closed with its X
     });
-    this.renderMenu();
+    if (large) this.renderMenu(); else this.renderBubble();
+    this.app.onChange(this.state);
+    return true;
   }
 
   closePip() {
@@ -156,6 +176,27 @@ export class Bubble {
     this.closingOnPurpose = true;
     try { this.pip.close(); } catch { /* already closed */ }
     this.pip = null; this.closingOnPurpose = false;
+  }
+
+  /** Resize the floating window (the browser allows it while handling a click). */
+  resize(w, h) {
+    const p = this.pip;
+    try { p.resizeTo(w + Math.max(0, p.outerWidth - p.innerWidth), h + Math.max(0, p.outerHeight - p.innerHeight)); } catch { /* not allowed now */ }
+  }
+
+  collapse() { this.resize(SMALL, SMALL); this.renderBubble(); }
+
+  expand() {
+    this.resize(340, 470);
+    if (this.unseen && this.last) { this.unseen = false; this.renderResult(this.last); } else this.renderMenu();
+  }
+
+  renderBubble() {
+    const b = this.pip.document.body;
+    b.dataset.view = "bubble";
+    const c = this.unseen && this.last ? dotColor(this.last) : "";
+    b.innerHTML = `<button class="pipbub" data-a="expand" aria-label="Fabric Inspector quick actions" title="Quick actions">${glass()}<i${c ? ` style="background:${c}"` : " hidden"}></i></button>`;
+    this.wireMenu(b.firstElementChild, this.pip);
   }
 
   renderMenu() {
@@ -174,14 +215,11 @@ export class Bubble {
   renderResult(rep) {
     const b = this.pip.document.body;
     b.dataset.view = "result";
-    b.innerHTML = `<div class="pipres"><button class="pipback" data-a="menu">${ICON.back}Quick actions</button>
+    b.innerHTML = `<div class="pipres"><div class="piptop"><button class="pipback" data-a="menu">${ICON.back}Quick actions</button>
+      <button class="qa-min dark" data-a="collapse" aria-label="Make the bubble small" title="Close">${ICON.min}</button></div>
       ${verdictHtml(rep)}<div class="report">${reportHtml(rep)}</div>
       <div class="pipact"><button class="btn primary sm" data-a="area">Select another area</button><button class="btn sm" data-a="app">Open in app</button></div></div>`;
-    b.firstElementChild.addEventListener("click", (e) => {
-      const x = e.target.closest("[data-a]");
-      if (!x || this.busy) return;
-      if (x.dataset.a === "menu") this.renderMenu(); else this.act(x.dataset.a, this.pip);
-    });
+    this.wireMenu(b.firstElementChild, this.pip);
   }
 
   galleryInPip() {
@@ -208,6 +246,7 @@ export class Bubble {
 
   // ------------------------------------------------------------------ bubble inside the page (other browsers)
   showPageBubble() {
+    if (this.pageHidden || this.pip) return;
     if (this.btn) { this.btn.hidden = false; return; }
     const b = document.createElement("button");
     b.className = "fbub"; b.setAttribute("aria-label", "Fabric Inspector quick actions");
@@ -233,12 +272,17 @@ export class Bubble {
       if (Math.abs(dx) + Math.abs(dy) > 8) { moved = true; b.classList.add("drag"); }
       if (moved) place(start[2] + dx, start[3] + dy);
     });
-    const up = () => { if (!start) return; start = null; b.classList.remove("drag"); if (moved) snap(); else this.openPanel(); };
+    const up = () => { if (!start) return; start = null; b.classList.remove("drag"); if (moved) snap(); else this.tapPageBubble(); };
     b.addEventListener("pointerup", up); b.addEventListener("pointercancel", () => { start = null; b.classList.remove("drag"); snap(); });
-    b.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); this.openPanel(); } });
+    b.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); this.tapPageBubble(); } });
     window.addEventListener("resize", () => { if (this.btn && !this.btn.hidden) snap(); });
     this.btn = b;
     if (this.last) this.setLast(this.last);
+  }
+
+  /** Tap on the bubble in the page: the quick actions. */
+  async tapPageBubble() {
+    this.openPanel();
   }
 
   removePageBubble() { this.closePanel(); if (this.btn) this.btn.hidden = true; }
@@ -263,7 +307,7 @@ export class Bubble {
     if (!this.back) return;
     this.back.remove(); this.back = null;
     document.removeEventListener("keydown", this.onKey);
-    if (this.btn && this.state === "on") this.btn.hidden = false;
+    if (this.btn && this.state === "on" && !this.pip && !this.pageHidden) this.btn.hidden = false;
   }
 
   // ------------------------------------------------------------------ select an area of the screen
@@ -279,7 +323,7 @@ export class Bubble {
     if (!inPip) { this.closePanel(); if (this.btn) this.btn.hidden = true; await wait(150); }   // nothing of ours in the picture
     let shot;
     try { shot = await this.grab(stream); }
-    catch (e) { if (this.btn && this.state === "on") this.btn.hidden = false; return this.message("The screen could not be captured. Try again."); }
+    catch (e) { if (this.btn && this.state === "on" && !this.pip && !this.pageHidden) this.btn.hidden = false; return this.message("The screen could not be captured. Try again."); }
     let rect;
     if (inPip) {
       rect = await this.pickInPopup(shot);
@@ -296,7 +340,7 @@ export class Bubble {
     } else {
       rect = await pickArea(document, shot);
     }
-    if (this.btn && this.state === "on" && !this.back) this.btn.hidden = false;
+    if (this.btn && this.state === "on" && !this.back && !this.pip && !this.pageHidden) this.btn.hidden = false;
     if (!rect) { if (inPip && this.pip.document.body.dataset.view !== "menu") this.renderMenu(); return; }
     await this.runCheck(() => this.app.analyseCapture(shot, rect));
   }

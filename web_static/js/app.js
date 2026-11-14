@@ -483,16 +483,14 @@ function go(name, push = true) {
 // ------------------------------------------------------------------ floating bubble (web; the Android app has a native one)
 let bubble = null;
 function bubbleCardUi(state) {
-  const label = state === "on" ? "Stop" : state === "hidden" ? "Show" : "Start";
-  for (const id of ["webBubbleToggle", "webBubbleToggle2"]) { $(id).textContent = label; $(id).classList.toggle("primary", state !== "on"); }
-  $("webBubbleState").textContent = state === "on" ? (bubble.mode === "pip"
-      ? "The bubble floats above your other windows. Open the fabric anywhere and use Select area."
-      : "The bubble is on. Tap it for quick actions.")
-    : state === "hidden" ? "The bubble is hidden. Tap Show to bring it back." : bubbleIntro;
+  $("bubbleOn").checked = state === "on";
+  $("webBubbleState").textContent = state !== "on" ? bubbleIntro
+    : bubble.pip ? "On. The bubble floats above your other windows; click it for quick actions."
+    : "On. Tap the bubble at the edge of the page for quick actions." + (canFloat ? " “Float over other windows” keeps it above other apps." : "");
 }
-const bubbleIntro = canFloat ? "Stays on top of all your windows. Select any part of the screen and check it."
+const bubbleIntro = canFloat ? "A small bubble that stays on top of all your windows. Click it to select any part of the screen and check it."
   : canCapture ? "Quick actions in a bubble. Select area checks a window you share, such as a photo viewer."
-  : "Quick actions in a bubble. For a bubble over other apps, use the Android app.";
+  : "Quick actions in a bubble on this page. For a bubble over other apps, use the Android app.";
 function wireBubble() {
   if (native) return;
   bubble = new Bubble({
@@ -508,8 +506,7 @@ function wireBubble() {
     },
     onChange: bubbleCardUi,
   });
-  const toggle = async () => { if (bubble.state === "on") bubble.stop(); else await bubble.start(); };
-  for (const id of ["webBubbleToggle", "webBubbleToggle2"]) $(id).onclick = toggle;
+  $("bubbleOn").addEventListener("change", (e) => { if (e.target.checked) bubble.start(); else bubble.stop(); });
   bubbleCardUi("off");
   bubble.restore();
 }

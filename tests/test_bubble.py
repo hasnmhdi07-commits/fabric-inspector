@@ -70,19 +70,11 @@ try:
             if js("!!(window.fabricApp && window.fabricApp.backend())"): break
         except Exception: pass
     js("fabricApp.ready")
-    check(js("document.getElementById('webBubbleToggle').offsetParent !== null"), "bubble card visible in the web app")
-    print("   card text:", js("document.getElementById('webBubbleState').textContent"))
-
-    # 1. start: Chrome/Edge would open the floating window; headless falls back to the in-page bubble
-    x, y = center("#webBubbleToggle"); click(x, y); time.sleep(1.2)
-    mode = js("fabricApp.bubble().mode"); state = js("fabricApp.bubble().state")
-    print("   mode:", mode, "state:", state)
-    check(state == "on", "bubble starts")
-    if mode == "pip":     # a real floating window opened: close it and test the in-page bubble UI
-        js("fabricApp.bubble().stop(); fabricApp.bubble().mode = 'page'; fabricApp.bubble().showPageBubble(); fabricApp.bubble().set('on'); true")
-    check(js("!!document.querySelector('.fbub') && !document.querySelector('.fbub').hidden"), "in-page bubble shown")
-    check(js("document.getElementById('webBubbleToggle').textContent") == "Stop", "card button says Stop")
-
+    # 1. on by default: a small bubble on the page edge; the switch is in Settings
+    check(js("!!document.querySelector('.fbub') && !document.querySelector('.fbub').hidden"), "bubble on the page by default")
+    check(js("document.getElementById('bubbleOn').checked"), "Settings switch is on")
+    check(js("!document.querySelector('.qa-back')") and js("!fabricApp.bubble().pip"), "nothing opens by itself")
+    print("   settings text:", js("document.getElementById('webBubbleState').textContent"))
     # 2. drag the bubble: it snaps to the nearest edge
     bx, by = center(".fbub"); drag((bx, by), (300, 400)); time.sleep(0.5)
     left = js("document.querySelector('.fbub').getBoundingClientRect().left")
@@ -97,6 +89,16 @@ try:
     shot("bubble_menu_web.png")
     js("document.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape'})); true"); time.sleep(0.3)
     check(js("!document.querySelector('.qa-back')"), "Escape closes the menu")
+    bx, by = center(".fbub"); click(bx, by); time.sleep(0.6)
+    if js("!!document.querySelector('.qa-float')"):
+        x, y = center(".qa-float"); click(x, y); time.sleep(1.2)
+        check(js("!!fabricApp.bubble().pip") and js("fabricApp.bubble().pip.document.body.dataset.view") == "menu", "Float over other windows opens the floating menu")
+        check(js("document.querySelector('.fbub').hidden"), "page bubble hides while floating")
+        js("fabricApp.bubble().collapse(); true"); time.sleep(0.3)
+        check(js("fabricApp.bubble().pip.document.body.dataset.view") == "bubble", "floating window collapses to the bubble")
+        js("fabricApp.bubble().closePip(); fabricApp.bubble().showPageBubble(); true"); time.sleep(0.3)
+    else:
+        js("document.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape'})); true"); time.sleep(0.3)
 
     # 4. screen capture (fake screen) -> picture
     sz = js("(async () => { const b = fabricApp.bubble(); const s = await b.ensureStream(window); const c = await b.grab(s); return [c.width, c.height]; })()")
@@ -135,10 +137,11 @@ try:
     shot("bubble_menu_last.png")
     x, y = center(".qa-row button:last-child"); click(x, y); time.sleep(0.3)
     check(js("fabricApp.bubble().state") == "off" and js("!fabricApp.bubble().stream"), "Turn off stops the bubble and the screen share")
+    check(not js("document.getElementById('bubbleOn').checked"), "Settings switch follows Turn off")
 
     # 6. phone width: card layout, bubble does not cover the tab bar
     cdp("Emulation.setDeviceMetricsOverride", width=390, height=844, deviceScaleFactor=2, mobile=True)
-    js("fabricApp.bubble().mode = 'page'; fabricApp.bubble().showPageBubble(); fabricApp.bubble().set('on'); true"); time.sleep(0.6)
+    js("fabricApp.bubble().start(); true"); time.sleep(0.6)
     r = js("(() => { const r = document.querySelector('.fbub').getBoundingClientRect(); return [r.left, r.right, r.bottom]; })()")
     check(r[1] <= 390 and r[2] <= 844 - 62, f"bubble inside the phone screen, above the tab bar {r}")
     bx, by = center(".fbub"); click(bx, by); time.sleep(0.6)

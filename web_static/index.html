@@ -141,11 +141,6 @@
         <div><b>Floating bubble</b><small id="bubbleState">Check fabric shown in any other app: camera, gallery, WhatsApp, a PDF.</small></div>
         <button id="bubbleToggle" class="btn sm primary">Start</button>
       </div>
-      <div class="webonly card bubblecard">
-        <svg class="pickglass"><use href="#i-glass"/></svg>
-        <div><b>Floating bubble</b><small id="webBubbleState">Quick actions in a bubble.</small></div>
-        <button id="webBubbleToggle" class="btn sm primary">Start</button>
-      </div>
       <a class="webonly card link" href="download/FabricInspector.apk" id="apkLink">
         <svg class="pickglass"><use href="#i-glass"/></svg>
         <div><b>Android app with floating bubble</b><small>Checks fabric shown in any other app. Download the APK.</small></div>
@@ -193,7 +188,8 @@
       <section class="card set">
         <h3>App</h3>
         <div class="nativeonly row2" hidden><span>Floating bubble over other apps</span><button id="bubbleToggle2" class="btn sm primary">Start</button></div>
-        <div class="webonly row2"><span>Floating bubble</span><button id="webBubbleToggle2" class="btn sm primary">Start</button></div>
+        <label class="webonly switch"><input type="checkbox" id="bubbleOn"><span>Floating bubble</span></label>
+        <small class="webonly" id="webBubbleState"></small>
         <div class="row2" id="installRow" hidden><span>Install on this device (works offline)</span><button id="install" class="btn sm primary">Install</button></div>
         <div class="row2"><span>AI engine</span><b id="engineInfo" class="mono">…</b></div>
         <div class="row2"><span>Saved checks</span><b id="histInfo" class="mono">0</b></div>
@@ -221,6 +217,8 @@
     <button class="navbtn" data-go="history"><svg class="ic"><use href="#i-history"/></svg><span>History</span></button>
     <button class="navbtn" data-go="settings"><svg class="ic"><use href="#i-settings"/></svg><span>Settings</span></button>
   </nav>
+  <!-- placeholders for the previous version's script while a phone switches to the new offline cache -->
+  <div hidden aria-hidden="true"><button id="webBubbleToggle"></button><button id="webBubbleToggle2"></button></div>
   <input id="fileCam" type="file" accept="image/*" capture="environment" hidden>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 </div>

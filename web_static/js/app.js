@@ -9,6 +9,7 @@ import { photoProblem, makeVerdict, SEV_LABEL } from "./verdict.js";
 import { limitSize, toCanvas } from "./imgutil.js";
 import { Camera } from "./camera.js";
 import { listScans, getScan, addScan, deleteScan, clearScans } from "./store.js";
+import { Bubble, canFloat, canCapture } from "./bubble.js";
 
 const MAX_SIDE = 1600;          // analysis size (same on every platform)
 const MAX_ORIGINAL = 4096;      // kept in memory so a selected area is analysed at full detail
@@ -187,7 +188,21 @@ async function setImage(blobOrUrl, name) {
     orig = await loadImage(blobOrUrl, MAX_ORIGINAL);
   } catch (e) { toast(e.message || "This photo could not be opened."); return; }
   origName = name; crop = null;
-  await run();
+  return run();
+}
+
+/** A picture of the screen (floating bubble): the whole picture is kept, the selected area is analysed. */
+async function analyseCapture(cv, [x, y, w, h]) {
+  closeCamera(); go("scan");
+  const f = Math.min(1, MAX_ORIGINAL / Math.max(cv.width, cv.height));
+  const W = Math.round(cv.width * f), H = Math.round(cv.height * f);
+  const c2 = document.createElement("canvas"); c2.width = W; c2.height = H;
+  const g = c2.getContext("2d", { willReadFrequently: true }); g.imageSmoothingQuality = "high"; g.drawImage(cv, 0, 0, W, H);
+  const id = g.getImageData(0, 0, W, H);
+  orig = { data: id.data, width: W, height: H }; origName = "Screen";
+  const cx = Math.min(W - 1, Math.round(x * f)), cy = Math.min(H - 1, Math.round(y * f));
+  crop = [cx, cy, Math.max(1, Math.min(W - cx, Math.round(w * f))), Math.max(1, Math.min(H - cy, Math.round(h * f)))];
+  return run();
 }
 
 function showPhoto() {
@@ -201,9 +216,9 @@ function showPhoto() {
 }
 
 async function run() {
-  if (!orig || busy) return;
+  if (!orig || busy) return null;
   const s = settings();
-  if (!(s.doDefects || s.doShade || s.doSkew)) return toast("Switch on at least one check.");
+  if (!(s.doDefects || s.doShade || s.doSkew)) { toast("Switch on at least one check."); return null; }
   busy = true; const id = ++runId;
   endSelect();
   const src = crop ? cropImage(orig, crop) : orig;
@@ -214,17 +229,21 @@ async function run() {
   if (window.matchMedia("(max-width: 899px)").matches) $("stage").scrollIntoView({ behavior: "smooth", block: "start" });
   try {
     if (!detector) await ready;                              // the photo waits for the model
-    await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 60)));    // let the scan animation start first
+    // let the scan animation start first (a hidden tab gets no animation frames: the floating bubble works from other apps)
+    if (!document.hidden) await new Promise((r) => { requestAnimationFrame(() => setTimeout(r, 60)); setTimeout(r, 250); });
     const t0 = performance.now();
     const rep = await analyse(image, s);
     const ms = performance.now() - t0;
-    if (ms < 450) await sleep(450 - ms);
-    if (id !== runId) return;
+    if (ms < 450 && !document.hidden) await sleep(450 - ms);
+    if (id !== runId) return null;
     report = rep; report.ms = ms; report.name = origName + (crop ? " (selected area)" : "");
     showReport();
+    if (bubble) bubble.setLast(report);
     saveToHistory().catch((e) => console.warn("history", e));
+    return report;
   } catch (e) {
     console.error(e); toast("The analysis failed: " + e.message);
+    return null;
   } finally {
     frame.classList.remove("scanning"); busy = false;
   }
@@ -461,6 +480,40 @@ function go(name, push = true) {
   window.scrollTo(0, 0);
 }
 
+// ------------------------------------------------------------------ floating bubble (web; the Android app has a native one)
+let bubble = null;
+function bubbleCardUi(state) {
+  const label = state === "on" ? "Stop" : state === "hidden" ? "Show" : "Start";
+  for (const id of ["webBubbleToggle", "webBubbleToggle2"]) { $(id).textContent = label; $(id).classList.toggle("primary", state !== "on"); }
+  $("webBubbleState").textContent = state === "on" ? (bubble.mode === "pip"
+      ? "The bubble floats above your other windows. Open the fabric anywhere and use Select area."
+      : "The bubble is on. Tap it for quick actions.")
+    : state === "hidden" ? "The bubble is hidden. Tap Show to bring it back." : bubbleIntro;
+}
+const bubbleIntro = canFloat ? "Stays on top of all your windows. Select any part of the screen and check it."
+  : canCapture ? "Quick actions in a bubble. Select area checks a window you share, such as a photo viewer."
+  : "Quick actions in a bubble. For a bubble over other apps, use the Android app.";
+function wireBubble() {
+  if (native) return;
+  bubble = new Bubble({
+    analyseCapture, toast,
+    analyseFile: (f) => setImage(f, f.name),
+    camera: () => { go("scan"); openCamera(); },
+    open: (showLast) => { go("scan"); if (showLast && report) $("results").scrollIntoView({ behavior: "smooth", block: "start" }); },
+    pickFile: () => $("fileAny").click(),
+    selectInPhoto: () => {
+      go("scan");
+      if (image && report && !busy) { beginSelect(); $("stage").scrollIntoView({ behavior: "smooth", block: "start" }); }
+      else { toast("Choose a photo first, then drag over the part you want to check.", 4500); $("fileAny").click(); }
+    },
+    onChange: bubbleCardUi,
+  });
+  const toggle = async () => { if (bubble.state === "on") bubble.stop(); else await bubble.start(); };
+  for (const id of ["webBubbleToggle", "webBubbleToggle2"]) $(id).onclick = toggle;
+  bubbleCardUi("off");
+  bubble.restore();
+}
+
 // ------------------------------------------------------------------ Android app bridge
 function bubbleUi(on) {
   for (const id of ["bubbleToggle", "bubbleToggle2"]) { $(id).textContent = on ? "Stop" : "Start"; $(id).classList.toggle("primary", !on); }
@@ -472,10 +525,11 @@ function wireNative() {
   for (const el of document.querySelectorAll(".nativeonly")) el.hidden = false;
   for (const id of ["bubbleToggle", "bubbleToggle2"]) $(id).onclick = () => native.toggleBubble();
   bubbleUi(native.bubbleRunning());
-  // called by the app: ("bubble", on, message) and ("shared") when a photo was shared to the app
+  // called by the app: ("bubble", on, message), ("shared") when a photo was shared to the app, ("action", "camera")
   window.fabricNative = (type, a, b) => {
     if (type === "bubble") { bubbleUi(!!a); if (b) toast(b, 6000); }
     if (type === "shared") takeShared();
+    if (type === "action" && a === "camera") { go("scan"); openCamera(); }      // "Take photo" in the bubble
   };
   // the phone's Back button: true = handled here
   window.fabricBack = () => {
@@ -546,7 +600,7 @@ async function fetchModel(url) {
 }
 
 async function init() {
-  loadSettings(); wireUI(); wireNative();
+  loadSettings(); wireUI(); wireNative(); wireBubble();
   go(location.hash.slice(1) || "scan", false);
   refreshHistoryCount();
   status("Loading AI", "loading");
@@ -563,7 +617,7 @@ ready.catch(() => {});
 if ("serviceWorker" in navigator && location.protocol !== "file:") {
   // an update replaces every cached file at once; reload so the page never mixes two versions
   if (navigator.serviceWorker.controller) navigator.serviceWorker.addEventListener("controllerchange", () => {
-    if (!busy && !image) location.reload(); else toast("An update is ready. It is used the next time you open the app.", 5000);
+    if (!busy && !image && !(bubble && bubble.state !== "off")) location.reload(); else toast("An update is ready. It is used the next time you open the app.", 5000);
   });
   navigator.serviceWorker.register("sw.js").catch(() => {});
 }
@@ -572,6 +626,8 @@ if ("serviceWorker" in navigator && location.protocol !== "file:") {
 window.fabricApp = {
   ready,
   backend: () => detector && detector.backend,
+  bubble: () => bubble,
+  analyseCapture,
   busy: () => busy,
   async analyseUrl(url, s) {
     await ready;

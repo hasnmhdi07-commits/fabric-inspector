@@ -32,9 +32,11 @@ import android.view.View
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.view.WindowManager
+import android.view.animation.OvershootInterpolator
 import android.webkit.WebView
 import android.widget.Button
 import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -72,12 +74,18 @@ class BubbleService : Service() {
     private var sheetWeb: WebView? = null
     private var sheetWait: View? = null
     private var request = 0                      // ignores answers of a check the user already closed
+    private var menu: View? = null
+    private var hidden = false                   // "Hide bubble"
+    private var lastHtml: String? = null         // the newest result, reopened from the menu
+    private var lastLabel = ""
+    private var lastColor = Fern.INK2
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     // ------------------------------------------------------------------ start / stop
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP) { stopSelf(); return START_NOT_STICKY }
+        if (intent?.action == ACTION_SHOW) { setHidden(false); return START_NOT_STICKY }
         if (intent?.action != ACTION_START || projection != null) return START_NOT_STICKY
 
         val note = notification()
@@ -103,8 +111,8 @@ class BubbleService : Service() {
         running = false
         request++
         main.removeCallbacksAndMessages(null)
-        for (v in listOf(bubble, selection, sheet)) if (v != null) try { wm.removeView(v) } catch (_: Exception) {}
-        bubble = null; selection = null; sheet = null
+        for (v in listOf(bubble, selection, sheet, menu)) if (v != null) try { wm.removeView(v) } catch (_: Exception) {}
+        bubble = null; selection = null; sheet = null; menu = null
         sheetWeb?.destroy(); sheetWeb = null
         try { display?.release() } catch (_: Exception) {}
         try { reader?.close() } catch (_: Exception) {}
@@ -113,19 +121,37 @@ class BubbleService : Service() {
         super.onDestroy()
     }
 
-    private fun notification(): Notification {
+    private fun notification(hidden: Boolean = false): Notification {
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         nm.createNotificationChannel(NotificationChannel("bubble", getString(R.string.notif_channel), NotificationManager.IMPORTANCE_LOW))
         val open = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
         val stop = PendingIntent.getService(this, 1, Intent(this, BubbleService::class.java).setAction(ACTION_STOP), PendingIntent.FLAG_IMMUTABLE)
-        return Notification.Builder(this, "bubble")
+        val b = Notification.Builder(this, "bubble")
             .setSmallIcon(R.drawable.ic_stat_bubble)
             .setContentTitle(getString(R.string.notif_title))
-            .setContentText(getString(R.string.notif_text))
+            .setContentText(getString(if (hidden) R.string.notif_hidden_text else R.string.notif_text))
             .setContentIntent(open)
-            .addAction(Notification.Action.Builder(null, getString(R.string.stop), stop).build())
             .setOngoing(true)
-            .build()
+        if (hidden) {
+            val show = PendingIntent.getService(this, 2, Intent(this, BubbleService::class.java).setAction(ACTION_SHOW), PendingIntent.FLAG_IMMUTABLE)
+            b.addAction(Notification.Action.Builder(null, getString(R.string.show_bubble), show).build())
+        }
+        return b.addAction(Notification.Action.Builder(null, getString(R.string.stop), stop).build()).build()
+    }
+
+    /** "Hide bubble": the bubble goes out of sight, screen capture stays on; the notification brings it back. */
+    private fun setHidden(hide: Boolean) {
+        if (projection == null) return
+        hidden = hide
+        if (selection == null) bubble?.visibility = if (hide) View.GONE else View.VISIBLE
+        (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).notify(1, notification(hide))
+    }
+
+    /** Opens the app; action = "pick" (photo from gallery) or "camera" (live camera), checked on the phone. */
+    private fun openApp(action: String?) {
+        val i = Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+        if (action != null) i.putExtra(EXTRA_ACTION, action)
+        try { startActivity(i) } catch (_: Exception) {}
     }
 
     // ------------------------------------------------------------------ screen capture
@@ -157,6 +183,7 @@ class BubbleService : Service() {
         try { display?.resize(screenW, screenH, m.densityDpi); display?.surface = r.surface } catch (_: Exception) {}
         old?.close()
         cancelSelection()
+        closeMenu()
         bubble?.let { snapBubble() }
     }
 
@@ -192,7 +219,7 @@ class BubbleService : Service() {
                     if (abs(e.rawX - downX) > dp(8f) || abs(e.rawY - downY) > dp(8f)) moved = true
                     if (moved) { bubbleLp.x = startX + (e.rawX - downX).toInt(); bubbleLp.y = startY + (e.rawY - downY).toInt(); wm.updateViewLayout(b, bubbleLp) }
                 }
-                MotionEvent.ACTION_UP -> if (moved) snapBubble() else startSelection()
+                MotionEvent.ACTION_UP -> if (moved) snapBubble() else showMenu()
             }
             true
         }
@@ -248,17 +275,112 @@ class BubbleService : Service() {
         selection = null
     }
 
-    private fun cancelSelection() { removeSelection(); bubble?.visibility = View.VISIBLE }
+    private fun cancelSelection() { removeSelection(); if (!hidden) bubble?.visibility = View.VISIBLE }
+
+    // ------------------------------------------------------------------ quick actions (tap on the bubble)
+    private fun showMenu() {
+        if (menu != null || selection != null) return
+        closeSheet()
+        val root = FrameLayout(this).apply { setBackgroundColor(Color.argb(115, 8, 18, 12)); setOnClickListener { closeMenu() } }
+        val card = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL; isClickable = true
+            background = pill(Color.rgb(22, 38, 28), 26f)
+            setPadding(dp(16f), dp(18f), dp(16f), dp(16f))
+            elevation = dp(14f).toFloat()
+        }
+        val head = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(4f), 0, 0, dp(12f)) }
+        head.addView(BubbleView(this), LinearLayout.LayoutParams(dp(30f), dp(30f)))
+        head.addView(TextView(this).apply {
+            setText(R.string.quick_actions); setTextColor(Color.WHITE); textSize = 18f; typeface = Typeface.DEFAULT_BOLD; setPadding(dp(10f), 0, 0, 0)
+        })
+        card.addView(head)
+
+        lastHtml?.let { html ->
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
+                background = pill(Color.argb(22, 255, 255, 255), 16f); setPadding(dp(12f), dp(10f), dp(12f), dp(10f))
+                setOnClickListener { closeMenu(); showSheet(); showHtml(html) }
+            }
+            row.addView(View(this).apply { background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(lastColor) } },
+                LinearLayout.LayoutParams(dp(12f), dp(12f)).apply { marginEnd = dp(12f) })
+            val txt = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+            txt.addView(TextView(this).apply { setText(R.string.qa_last); setTextColor(Color.argb(165, 255, 255, 255)); textSize = 11f; letterSpacing = 0.06f })
+            txt.addView(TextView(this).apply { text = lastLabel; setTextColor(Color.WHITE); textSize = 15f; typeface = Typeface.DEFAULT_BOLD; isSingleLine = true })
+            row.addView(txt, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
+            row.addView(TextView(this).apply { text = "›"; textSize = 22f; setTextColor(Color.argb(130, 255, 255, 255)) })
+            card.addView(row, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { bottomMargin = dp(10f) })
+        }
+
+        fun tileRow(vararg tiles: View) = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            tiles.forEachIndexed { i, t -> addView(t, LinearLayout.LayoutParams(0, dp(126f), 1f).apply { if (i > 0) marginStart = dp(10f) }) }
+        }
+        card.addView(tileRow(
+            tile(R.string.qa_area, Fern.FERN, R.drawable.ic_qa_area, Color.WHITE) { closeMenu(); startSelection() },
+            tile(R.string.qa_gallery, Color.parseColor("#2A78D6"), R.drawable.ic_qa_gallery, Color.WHITE) { closeMenu(); openApp("pick") },
+        ))
+        card.addView(tileRow(
+            tile(R.string.qa_camera, Color.parseColor("#E7B53A"), R.drawable.ic_qa_camera, Color.parseColor("#2B2205")) { closeMenu(); openApp("camera") },
+            tile(R.string.qa_open, null, 0, 0) { closeMenu(); openApp(null) },
+        ), LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { topMargin = dp(10f) })
+
+        val bottom = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        for ((i, pair) in listOf<Pair<Int, () -> Unit>>(
+            R.string.qa_hide to { closeMenu(); setHidden(true) },
+            R.string.qa_off to { closeMenu(); stopSelf() },
+        ).withIndex()) {
+            bottom.addView(TextView(this).apply {
+                setText(pair.first); setTextColor(Color.WHITE); textSize = 15f; gravity = Gravity.CENTER
+                background = pill(Color.argb(18, 255, 255, 255), 16f); isClickable = true; setOnClickListener { pair.second() }
+            }, LinearLayout.LayoutParams(0, dp(48f), 1f).apply { if (i > 0) marginStart = dp(10f) })
+        }
+        card.addView(bottom, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { topMargin = dp(10f) })
+
+        root.addView(card, FrameLayout.LayoutParams(min(dp(372f), screenW - dp(32f)), WRAP_CONTENT, Gravity.CENTER))
+        bubble?.visibility = View.GONE
+        menu = root
+        wm.addView(root, overlayParams(MATCH_PARENT, MATCH_PARENT))
+        // grows out of the bubble
+        card.alpha = 0f; card.scaleX = 0.6f; card.scaleY = 0.6f
+        card.pivotX = if (bubbleLp.x < screenW / 2) 0f else min(dp(372f), screenW - dp(32f)).toFloat()
+        card.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(260).setInterpolator(OvershootInterpolator(1.1f)).start()
+    }
+
+    private fun closeMenu() {
+        val m = menu ?: return
+        menu = null
+        try { wm.removeView(m) } catch (_: Exception) {}
+        if (!hidden && selection == null) bubble?.visibility = View.VISIBLE
+    }
+
+    /** One quick-action tile: a coloured circle with an icon (null colour = the pick glass) and a label. */
+    private fun tile(label: Int, color: Int?, icon: Int, tint: Int, onClick: () -> Unit): View {
+        val t = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
+            background = pill(Color.argb(18, 255, 255, 255), 20f); isClickable = true
+            setPadding(dp(6f), dp(8f), dp(6f), dp(8f)); setOnClickListener { onClick() }
+        }
+        val circle: View = if (color == null) BubbleView(this) else FrameLayout(this).apply {
+            background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(color) }
+            addView(ImageView(context).apply { setImageResource(icon); setColorFilter(tint) },
+                FrameLayout.LayoutParams(dp(26f), dp(26f), Gravity.CENTER))
+        }
+        t.addView(circle, LinearLayout.LayoutParams(dp(56f), dp(56f)))
+        t.addView(TextView(this).apply {
+            setText(label); setTextColor(Color.WHITE); textSize = 14.5f; gravity = Gravity.CENTER; setPadding(0, dp(10f), 0, 0)
+        })
+        return t
+    }
 
     // ------------------------------------------------------------------ capture -> server -> result
     private fun captureAndAnalyse(area: Rect, attempt: Int) {
         val shot = grab()
         if (shot == null) {
             if (attempt < 6) { main.postDelayed({ captureAndAnalyse(area, attempt + 1) }, 150); return }
-            bubble?.visibility = View.VISIBLE
+            if (!hidden) bubble?.visibility = View.VISIBLE
             showSheet(); showMessage(getString(R.string.err_capture)); return
         }
-        bubble?.visibility = View.VISIBLE
+        if (!hidden) bubble?.visibility = View.VISIBLE
         val r = Rect(max(0, area.left), max(0, area.top), min(shot.width, area.right), min(shot.height, area.bottom))
         if (r.width() < 64 || r.height() < 64) { showSheet(); showMessage(getString(R.string.err_small)); return }
         var part = Bitmap.createBitmap(shot, r.left, r.top, r.width(), r.height())
@@ -289,8 +411,14 @@ class BubbleService : Service() {
                 if (html.isNullOrEmpty() || !html.contains("<html")) { showMessage(getString(R.string.err_network)); return@post }
                 val (state, severity) = (verdict.split("|") + listOf("", "")).let { it[0] to it[1] }
                 bubble?.badge = Fern.SEVERITY[severity] ?: if (state == "cannot") Fern.INK2 else null
-                sheetWait?.visibility = View.GONE
-                sheetWeb?.apply { visibility = View.VISIBLE; loadDataWithBaseURL(null, html, "text/html", "utf-8", null) }
+                lastHtml = html
+                lastColor = Fern.SEVERITY[severity] ?: if (state == "none") Fern.SWATCH else Fern.INK2
+                lastLabel = when (state) {
+                    "defects" -> getString(R.string.last_defects) + (if (severity.isNotEmpty()) " · " + severity.replaceFirstChar { it.uppercase() } else "")
+                    "none" -> getString(R.string.last_none)
+                    else -> getString(R.string.last_cannot)
+                }
+                showHtml(html)
             }
         }
     }
@@ -327,6 +455,11 @@ class BubbleService : Service() {
         wm.addView(root, overlayParams(MATCH_PARENT, MATCH_PARENT))
     }
 
+    private fun showHtml(html: String) {
+        sheetWait?.visibility = View.GONE
+        sheetWeb?.apply { visibility = View.VISIBLE; loadDataWithBaseURL(null, html, "text/html", "utf-8", null) }
+    }
+
     /** A plain message in the sheet (errors): what happened and what to do. */
     private fun showMessage(text: String) {
         val wait = sheetWait as? LinearLayout ?: return
@@ -354,6 +487,8 @@ class BubbleService : Service() {
     companion object {
         const val ACTION_START = "app.fabricinspector.START"
         const val ACTION_STOP = "app.fabricinspector.STOP"
+        const val ACTION_SHOW = "app.fabricinspector.SHOW"
+        const val EXTRA_ACTION = "bubble_action"
         const val EXTRA_CODE = "code"
         const val EXTRA_DATA = "data"
         @Volatile var running = false

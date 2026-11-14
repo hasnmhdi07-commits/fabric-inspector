@@ -11,8 +11,8 @@ android {
         applicationId = "app.fabricinspector"
         minSdk = 26                // Android 8+
         targetSdk = 34
-        versionCode = 2
-        versionName = "0.2"
+        versionCode = 3
+        versionName = "0.3"
         // the app's main screen: the web app (kept on the phone for offline use after the first start)
         buildConfigField("String", "APP_URL", "\"https://fabric-inspector.vercel.app/\"")
         // the analysis server (same engine as the web app and the Windows app)

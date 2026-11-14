@@ -57,6 +57,7 @@ class MainActivity : Activity() {
     private var pageReady = false
     private var loadFailed = false
     @Volatile private var shared: String? = null          // a photo shared to the app, waiting for the page
+    private var pendingAction: String? = null             // "camera" from the bubble, waiting for the page
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -132,6 +133,7 @@ class MainActivity : Activity() {
             offline.visibility = View.GONE
             pageReady = true
             if (shared != null) js("window.fabricNative && window.fabricNative('shared')")
+            runAction()
         }
     }
 
@@ -160,6 +162,11 @@ class MainActivity : Activity() {
     // ------------------------------------------------------------------ photos shared from other apps
     private fun takeIntent(intent: Intent?) {
         if (intent == null) return
+        when (intent.getStringExtra(BubbleService.EXTRA_ACTION)) {      // quick actions of the bubble
+            "pick" -> pickPhoto()
+            "camera" -> { pendingAction = "camera"; runAction() }
+        }
+        intent.removeExtra(BubbleService.EXTRA_ACTION)       // once (also after a rotation)
         val uri: Uri? = when (intent.action) {
             Intent.ACTION_SEND -> @Suppress("DEPRECATION") intent.getParcelableExtra(Intent.EXTRA_STREAM)
             Intent.ACTION_VIEW -> intent.data
@@ -172,6 +179,24 @@ class MainActivity : Activity() {
             android.util.Log.i("FabricInspector", "shared photo $uri -> ${b64?.length ?: 0} base64 chars")
             if (b64 != null) { shared = b64; js("window.fabricNative && window.fabricNative('shared')") }
         }
+    }
+
+    private fun runAction() {
+        val a = pendingAction ?: return
+        if (!pageReady) return
+        pendingAction = null
+        js("window.fabricNative && window.fabricNative('action', ${JSONObject.quote(a)})")
+    }
+
+    /** "Photo from gallery" in the bubble: the system photo picker, then the same path as a shared photo. */
+    private fun pickPhoto() {
+        val pick = Intent(Intent.ACTION_GET_CONTENT).setType("image/*").addCategory(Intent.CATEGORY_OPENABLE)
+        try { @Suppress("DEPRECATION") startActivityForResult(pick, REQ_PICK) } catch (_: Exception) {}
+    }
+
+    private fun takePicked(uri: Uri) = io.execute {
+        val b64 = try { readPhoto(uri) } catch (e: Exception) { null }
+        if (b64 != null) { shared = b64; js("window.fabricNative && window.fabricNative('shared')") }
     }
 
     /** Reads a shared photo, upright (EXIF) and at most 3000 px on its longest side, as base64 JPEG. */
@@ -266,6 +291,7 @@ class MainActivity : Activity() {
                 fileCallback?.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(resultCode, data))
                 fileCallback = null
             }
+            REQ_PICK -> data?.data?.let { takePicked(it) }
             REQ_CAPTURE -> {
                 if (resultCode != RESULT_OK || data == null) { tellBubble(getString(R.string.capture_denied)); return }
                 startForegroundService(Intent(this, BubbleService::class.java).setAction(BubbleService.ACTION_START)
@@ -301,5 +327,6 @@ class MainActivity : Activity() {
         private const val REQ_NOTIFY = 2
         private const val REQ_FILE = 3
         private const val REQ_CAMERA = 4
+        private const val REQ_PICK = 5
     }
 }

@@ -251,19 +251,22 @@ export class Bubble {
     const b = document.createElement("button");
     b.className = "fbub"; b.setAttribute("aria-label", "Fabric Inspector quick actions");
     b.innerHTML = glass() + "<i hidden></i>";
+    const vw = () => document.documentElement.clientWidth || innerWidth;     // without the scrollbar
     let pos = null;
     try { pos = JSON.parse(localStorage.getItem("fi-bubble-pos") || "null"); } catch { /* ignore */ }
     const place = (x, y) => { b.style.left = x + "px"; b.style.top = y + "px"; };
     const snap = () => {
       const s = b.offsetWidth, r = b.getBoundingClientRect();
-      const x = r.left + s / 2 < innerWidth / 2 ? 8 : innerWidth - s - 8;
+      const left = r.left + s / 2 < vw() / 2, x = left ? 0 : vw() - s;
+      b.classList.toggle("dock-l", left); b.classList.toggle("dock-r", !left);
       const y = Math.min(Math.max(r.top, 70), innerHeight - s - 90);
       place(x, y);
-      try { localStorage.setItem("fi-bubble-pos", JSON.stringify({ right: x > 8, y: y / innerHeight })); } catch { /* ignore */ }
+      try { localStorage.setItem("fi-bubble-pos", JSON.stringify({ right: !left, y: y / innerHeight })); } catch { /* ignore */ }
     };
     document.body.appendChild(b);
     const s = b.offsetWidth || 58;
-    place(pos && !pos.right ? 8 : innerWidth - s - 8, pos ? pos.y * innerHeight : innerHeight * 0.55);
+    place(pos && !pos.right ? 0 : vw() - s, pos ? pos.y * innerHeight : innerHeight * 0.55);
+    b.classList.add(pos && !pos.right ? "dock-l" : "dock-r");
     let start = null, moved = false;
     b.addEventListener("pointerdown", (e) => { start = [e.clientX, e.clientY, b.offsetLeft, b.offsetTop]; moved = false; b.setPointerCapture(e.pointerId); });
     b.addEventListener("pointermove", (e) => {

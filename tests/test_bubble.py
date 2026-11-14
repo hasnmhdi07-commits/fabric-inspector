@@ -70,6 +70,9 @@ try:
             if js("!!(window.fabricApp && window.fabricApp.backend())"): break
         except Exception: pass
     js("fabricApp.ready")
+    time.sleep(0.8); shot("start_desktop.png")
+    st = js("(() => { const a = document.querySelector('.stagecol').getBoundingClientRect(), b = document.getElementById('sidecards').getBoundingClientRect(); return [a.top, a.bottom, b.top, b.bottom]; })()")
+    check(abs(st[0] - st[2]) < 2 and abs(st[1] - st[3]) < 2, f"start screen: both columns line up top and bottom {st}")
     # 1. on by default: a small bubble on the page edge; the switch is in Settings
     check(js("!!document.querySelector('.fbub') && !document.querySelector('.fbub').hidden"), "bubble on the page by default")
     check(js("document.getElementById('bubbleOn').checked"), "Settings switch is on")
@@ -77,8 +80,8 @@ try:
     print("   settings text:", js("document.getElementById('webBubbleState').textContent"))
     # 2. drag the bubble: it snaps to the nearest edge
     bx, by = center(".fbub"); drag((bx, by), (300, 400)); time.sleep(0.5)
-    left = js("document.querySelector('.fbub').getBoundingClientRect().left")
-    check(abs(left - 8) < 2, f"bubble snaps to the left edge (left={left:.0f})")
+    left = js("document.querySelector('.fbub').offsetLeft")
+    check(abs(left) < 2 and js("document.querySelector('.fbub').classList.contains('dock-l')"), f"bubble docks at the left edge (left={left:.0f})")
 
     # 3. tap: the quick-action menu
     bx, by = center(".fbub"); click(bx, by); time.sleep(0.6)
@@ -143,7 +146,7 @@ try:
     cdp("Emulation.setDeviceMetricsOverride", width=390, height=844, deviceScaleFactor=2, mobile=True)
     js("fabricApp.bubble().start(); true"); time.sleep(0.6)
     r = js("(() => { const r = document.querySelector('.fbub').getBoundingClientRect(); return [r.left, r.right, r.bottom]; })()")
-    check(r[1] <= 390 and r[2] <= 844 - 62, f"bubble inside the phone screen, above the tab bar {r}")
+    check(r[0] < 390 - 30 and r[2] <= 844 - 62, f"bubble docked on the phone screen edge, above the tab bar {r}")
     bx, by = center(".fbub"); click(bx, by); time.sleep(0.6)
     w = js("document.querySelector('.qa').getBoundingClientRect().width")
     check(w <= 390 - 32 + 1, f"menu fits the phone width ({w:.0f}px)")

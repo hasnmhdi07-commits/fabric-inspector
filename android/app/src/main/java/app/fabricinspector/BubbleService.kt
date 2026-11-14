@@ -147,10 +147,12 @@ class BubbleService : Service() {
         (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).notify(1, notification(hide))
     }
 
-    /** Opens the app; action = "pick" (photo from gallery) or "camera" (live camera), checked on the phone. */
-    private fun openApp(action: String?) {
+    /** Opens the app; action = "pick" (photo from gallery), "camera" (live camera) or "area" (a selected screen
+     *  area saved at [path]); the app checks it on the phone. */
+    private fun openApp(action: String?, path: String? = null) {
         val i = Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
         if (action != null) i.putExtra(EXTRA_ACTION, action)
+        if (path != null) i.putExtra(EXTRA_PATH, path)
         try { startActivity(i) } catch (_: Exception) {}
     }
 
@@ -383,43 +385,14 @@ class BubbleService : Service() {
         if (!hidden) bubble?.visibility = View.VISIBLE
         val r = Rect(max(0, area.left), max(0, area.top), min(shot.width, area.right), min(shot.height, area.bottom))
         if (r.width() < 64 || r.height() < 64) { showSheet(); showMessage(getString(R.string.err_small)); return }
-        var part = Bitmap.createBitmap(shot, r.left, r.top, r.width(), r.height())
-        val longest = max(part.width, part.height)
-        if (longest > 1600) part = Bitmap.createScaledBitmap(part, part.width * 1600 / longest, part.height * 1600 / longest, true)
-
-        showSheet()
-        val mine = ++request
-        val url = BuildConfig.API_URL + "?format=html" +
-            (if (prefs.getBoolean("shade", false)) "&shade=1" else "") + (if (prefs.getBoolean("skew", false)) "&skew=1" else "")
+        val part = Bitmap.createBitmap(shot, r.left, r.top, r.width(), r.height())
+        // the selected area opens in the full app: checked on the phone, with History, Share and Report
         io.execute {
-            val jpeg = ByteArrayOutputStream().also { part.compress(Bitmap.CompressFormat.JPEG, 88, it) }.toByteArray()
-            var html: String? = null
-            var verdict = ""
+            val file = java.io.File(cacheDir, "bubble_area.jpg")
             try {
-                val c = URL(url).openConnection() as HttpURLConnection
-                c.requestMethod = "POST"; c.doOutput = true; c.connectTimeout = 15000; c.readTimeout = 60000
-                c.setRequestProperty("Content-Type", "image/jpeg")
-                c.setFixedLengthStreamingMode(jpeg.size)
-                c.outputStream.use { it.write(jpeg) }
-                val stream = if (c.responseCode in 200..299) c.inputStream else c.errorStream   // errors are readable pages too
-                html = stream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }
-                verdict = c.getHeaderField("X-Fabric-Verdict") ?: ""
-                c.disconnect()
-            } catch (e: Exception) { html = null }
-            main.post {
-                if (mine != request) return@post
-                if (html.isNullOrEmpty() || !html.contains("<html")) { showMessage(getString(R.string.err_network)); return@post }
-                val (state, severity) = (verdict.split("|") + listOf("", "")).let { it[0] to it[1] }
-                bubble?.badge = Fern.SEVERITY[severity] ?: if (state == "cannot") Fern.INK2 else null
-                lastHtml = html
-                lastColor = Fern.SEVERITY[severity] ?: if (state == "none") Fern.SWATCH else Fern.INK2
-                lastLabel = when (state) {
-                    "defects" -> getString(R.string.last_defects) + (if (severity.isNotEmpty()) " · " + severity.replaceFirstChar { it.uppercase() } else "")
-                    "none" -> getString(R.string.last_none)
-                    else -> getString(R.string.last_cannot)
-                }
-                showHtml(html)
-            }
+                file.outputStream().use { part.compress(Bitmap.CompressFormat.JPEG, 93, it) }
+                main.post { openApp("area", file.absolutePath) }
+            } catch (e: Exception) { main.post { showSheet(); showMessage(getString(R.string.err_capture)) } }
         }
     }
 
@@ -489,6 +462,7 @@ class BubbleService : Service() {
         const val ACTION_STOP = "app.fabricinspector.STOP"
         const val ACTION_SHOW = "app.fabricinspector.SHOW"
         const val EXTRA_ACTION = "bubble_action"
+        const val EXTRA_PATH = "bubble_path"
         const val EXTRA_CODE = "code"
         const val EXTRA_DATA = "data"
         @Volatile var running = false

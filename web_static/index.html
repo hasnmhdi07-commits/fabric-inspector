@@ -137,11 +137,6 @@
     </section>
 
     <section class="panel side" id="sidecards">
-      <div class="nativeonly card bubblecard" hidden>
-        <svg class="pickglass"><use href="#i-glass"/></svg>
-        <div><b>Floating bubble</b><small id="bubbleState">Check fabric shown in any other app: camera, gallery, WhatsApp, a PDF.</small></div>
-        <button id="bubbleToggle" class="btn sm primary">Start</button>
-      </div>
       <a class="webonly card link" href="download/FabricInspector.apk" id="apkLink" data-cta="Download APK">
         <svg class="pickglass"><use href="#i-glass"/></svg>
         <div><b>Android app with floating bubble</b><small>Checks fabric shown in any other app. Download the APK.</small></div>
@@ -184,9 +179,8 @@
       </section>
       <section class="card set">
         <h3>App</h3>
-        <div class="nativeonly row2" hidden><span>Floating bubble over other apps</span><button id="bubbleToggle2" class="btn sm primary">Start</button></div>
-        <label class="webonly switch"><input type="checkbox" id="bubbleOn"><span>Floating bubble</span></label>
-        <small class="webonly" id="webBubbleState"></small>
+        <label class="switch"><input type="checkbox" id="bubbleOn"><span>Floating bubble</span></label>
+        <small id="webBubbleState"></small>
         <div class="row2" id="installRow" hidden><span>Install on this device (works offline)</span><button id="install" class="btn sm primary">Install</button></div>
         <div class="row2"><span>AI engine</span><b id="engineInfo" class="mono">…</b></div>
         <div class="row2"><span>Saved checks</span><b id="histInfo" class="mono">0</b></div>
@@ -198,8 +192,8 @@
         2) Shade: CIELAB colour difference ΔE CMC(2:1) with a heat map. 3) Bow/skew: weft-line angle across the width
         (ASTM D3882 definitions). 4) A rule-based knowledge base (4-point system ASTM D5430) gives severity, likely
         causes, remedy and prevention. It never invents causes.</p>
-        <p><b>Privacy.</b> In this app the AI runs on your device; photos are not uploaded. Only the floating bubble
-        and the iPhone shortcut send the selected area to the analysis server, which does not store it.</p>
+        <p><b>Privacy.</b> In this app the AI runs on your device; photos are not uploaded, also not from the
+        floating bubble. Only the iPhone shortcut sends a screenshot to the analysis server, which does not store it.</p>
         <p><b>Data.</b> Trained on public datasets: Fabric Stain Dataset (Univ. of Moratuwa, CC0) and Roboflow Universe
         projects (CC BY 4.0) by aitex-data-set-waiandt, fault-annotations, pulak-deb-roy, defects-zxmr5, defect-dataset,
         projectcollege-msi80, fabric-defect-detection-6xxtk. Example images: Fabric Stain Dataset (CC0), defects-zxmr5
@@ -215,7 +209,7 @@
     <button class="navbtn" data-go="settings"><svg class="ic"><use href="#i-settings"/></svg><span>Settings</span></button>
   </nav>
   <!-- placeholders for the previous version's script while a phone switches to the new offline cache -->
-  <div hidden aria-hidden="true"><button id="webBubbleToggle"></button><button id="webBubbleToggle2"></button></div>
+  <div hidden aria-hidden="true"><button id="webBubbleToggle"></button><button id="webBubbleToggle2"></button><button id="bubbleToggle"></button><button id="bubbleToggle2"></button><small id="bubbleState"></small></div>
   <input id="fileCam" type="file" accept="image/*" capture="environment" hidden>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 </div>

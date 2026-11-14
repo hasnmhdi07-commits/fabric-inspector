@@ -57,7 +57,9 @@ class MainActivity : Activity() {
     private var pageReady = false
     private var loadFailed = false
     @Volatile private var shared: String? = null          // a photo shared to the app, waiting for the page
+    @Volatile private var sharedName = "Shared photo"
     private var pendingAction: String? = null             // "camera" from the bubble, waiting for the page
+    private var pendingStart = false                      // switching the bubble on continues after the overlay screen
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -86,7 +88,15 @@ class MainActivity : Activity() {
 
     override fun onSaveInstanceState(outState: Bundle) { super.onSaveInstanceState(outState); web.saveState(outState) }
     override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); takeIntent(intent) }
-    override fun onResume() { super.onResume(); web.onResume(); tellBubble() }      // the bubble may have been stopped from its notification
+    override fun onResume() {
+        super.onResume(); web.onResume()
+        if (pendingStart) {                                   // back from the "Display over other apps" screen
+            pendingStart = false
+            if (Settings.canDrawOverlays(this)) { startBubble(); return }
+            tellBubble(getString(R.string.overlay_denied)); return
+        }
+        tellBubble()                                          // the bubble may have been stopped from its notification
+    }
     override fun onPause() { web.onPause(); super.onPause() }
     override fun onDestroy() { io.shutdownNow(); web.destroy(); super.onDestroy() }
 
@@ -110,6 +120,7 @@ class MainActivity : Activity() {
         @JavascriptInterface fun toggleBubble() = runOnUiThread { if (BubbleService.running) stopBubble() else startBubble() }
         @JavascriptInterface fun setChecks(shade: Boolean, skew: Boolean) = prefs.edit().putBoolean("shade", shade).putBoolean("skew", skew).apply()
         @JavascriptInterface fun takeShared(): String { val s = shared; shared = null; return s ?: "" }
+        @JavascriptInterface fun sharedName(): String = sharedName
         @JavascriptInterface fun share(imageBase64: String, text: String) = runOnUiThread { shareOut(imageBase64, text) }
     }
 
@@ -165,10 +176,17 @@ class MainActivity : Activity() {
         when (intent.getStringExtra(BubbleService.EXTRA_ACTION)) {      // quick actions of the bubble
             "pick" -> pickPhoto()
             "camera" -> { pendingAction = "camera"; runAction() }
+            "area" -> intent.getStringExtra(BubbleService.EXTRA_PATH)?.let { path ->      // Select area in the bubble
+                io.execute {
+                    val b64 = try { Base64.encodeToString(java.io.File(path).readBytes(), Base64.NO_WRAP) } catch (e: Exception) { null }
+                    if (b64 != null) { sharedName = "Screen area"; shared = b64; js("window.fabricNative && window.fabricNative('shared')") }
+                }
+            }
         }
+        intent.removeExtra(BubbleService.EXTRA_PATH)
         intent.removeExtra(BubbleService.EXTRA_ACTION)       // once (also after a rotation)
         val uri: Uri? = when (intent.action) {
-            Intent.ACTION_SEND -> @Suppress("DEPRECATION") intent.getParcelableExtra(Intent.EXTRA_STREAM)
+            Intent.ACTION_SEND -> { sharedName = "Shared photo"; @Suppress("DEPRECATION") intent.getParcelableExtra(Intent.EXTRA_STREAM) }
             Intent.ACTION_VIEW -> intent.data
             else -> null
         }
@@ -196,7 +214,7 @@ class MainActivity : Activity() {
 
     private fun takePicked(uri: Uri) = io.execute {
         val b64 = try { readPhoto(uri) } catch (e: Exception) { null }
-        if (b64 != null) { shared = b64; js("window.fabricNative && window.fabricNative('shared')") }
+        if (b64 != null) { sharedName = "Gallery photo"; shared = b64; js("window.fabricNative && window.fabricNative('shared')") }
     }
 
     /** Reads a shared photo, upright (EXIF) and at most 3000 px on its longest side, as base64 JPEG. */
@@ -250,6 +268,7 @@ class MainActivity : Activity() {
     private fun startBubble() {
         if (!Settings.canDrawOverlays(this)) {
             tellBubble(getString(R.string.step_overlay))
+            pendingStart = true
             startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
             return
         }
@@ -262,7 +281,10 @@ class MainActivity : Activity() {
 
     private fun askCapture() {
         val mpm = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-        @Suppress("DEPRECATION") startActivityForResult(mpm.createScreenCaptureIntent(), REQ_CAPTURE)
+        // Android 14+: capture the whole screen (no "single app" choice, the bubble works over every app)
+        val intent = if (Build.VERSION.SDK_INT >= 34) mpm.createScreenCaptureIntent(android.media.projection.MediaProjectionConfig.createConfigForDefaultDisplay())
+                     else mpm.createScreenCaptureIntent()
+        @Suppress("DEPRECATION") startActivityForResult(intent, REQ_CAPTURE)
     }
 
     private fun stopBubble() {

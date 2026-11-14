@@ -517,15 +517,16 @@ function wireBubble() {
 }
 
 // ------------------------------------------------------------------ Android app bridge
-function bubbleUi(on) {
-  for (const id of ["bubbleToggle", "bubbleToggle2"]) { $(id).textContent = on ? "Stop" : "Start"; $(id).classList.toggle("primary", !on); }
-  $("bubbleState").textContent = on ? "The bubble is on. Open any app that shows fabric and tap the bubble." : "Check fabric shown in any other app: camera, gallery, WhatsApp, a PDF.";
+function bubbleUi(on) {        // Android app: the switch in Settings follows the native bubble
+  $("bubbleOn").checked = on;
+  $("webBubbleState").textContent = on ? "On. Tap the bubble over any app: select an area of the screen, a photo or the camera."
+    : "A bubble over other apps (camera, gallery, WhatsApp, a PDF). Switching it on asks for the permissions it needs.";
 }
 function wireNative() {
   if (!native) return;
   document.body.classList.add("native");
   for (const el of document.querySelectorAll(".nativeonly")) el.hidden = false;
-  for (const id of ["bubbleToggle", "bubbleToggle2"]) $(id).onclick = () => native.toggleBubble();
+  $("bubbleOn").addEventListener("change", (e) => { if (e.target.checked !== native.bubbleRunning()) native.toggleBubble(); });
   bubbleUi(native.bubbleRunning());
   // called by the app: ("bubble", on, message), ("shared") when a photo was shared to the app, ("action", "camera")
   window.fabricNative = (type, a, b) => {
@@ -547,7 +548,7 @@ async function takeShared() {
   const b64 = native.takeShared();
   if (!b64) return;
   const blob = await (await fetch("data:image/jpeg;base64," + b64)).blob();
-  setImage(blob, "Shared photo");
+  setImage(blob, (native.sharedName && native.sharedName()) || "Shared photo");
 }
 
 // ------------------------------------------------------------------ wiring

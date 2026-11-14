@@ -55,7 +55,12 @@ the floating window and in the app. Other browsers get a draggable bubble inside
 cannot draw over other apps, so there "Select area" works on the open photo. Quick actions everywhere: Select
 area, Photo from gallery, Take photo, Open Fabric Inspector, last check, Hide bubble, Turn off.
 
-**Android app 0.3 (built, emulator-tested 2026-11-14).** Tapping the bubble opens the same Quick actions panel
+**Android app 0.4 (emulator-tested 2026-11-14).** Bubble on/off is a switch in Settings (no card on the Scan
+screen). Switching on asks for all permissions in one go and continues by itself after "Display over other apps";
+the screen-capture consent is an Android rule and appears each time the bubble starts (Android 14+: whole screen
+only, no "single app" choice). Select area now opens the full app with the area as the photo, checked on the phone
+(no server). Phones with app 0.1/0.2 must install the new APK.
+**Android app 0.3.** Tapping the bubble opens the same Quick actions panel
 (gallery/camera open the app and check on the phone; Hide bubble keeps capture on and the notification gets
 "Show bubble"). "Take photo" needs the web app deployed with the `('action', 'camera')` handler.
 **Android app 0.2.** Main screen is the web app with the AI running on the phone; floating bubble

@@ -417,3 +417,10 @@ body.pipbody[data-view="bubble"] { display: grid; place-items: center; min-heigh
   #sidecards .tips b { font: 700 1.08rem var(--f-display); font-stretch: 106%; }
   #sidecards .tips ul { text-align: left; max-width: 40ch; }
 }
+@media (min-width: 900px) {
+  /* the header lines up with the content below (same 1180 px column) */
+  .top { padding-left: max(16px, calc((100% - 1180px) / 2 + 16px)); padding-right: max(16px, calc((100% - 1180px) / 2 + 16px)); }
+  /* start screen: the main box and the last card end on one line; the check chips sit below */
+  #scr-scan .checks { min-height: 36px; flex-wrap: nowrap; }
+  #scr-scan[data-state=empty] #sidecards { height: calc(var(--colh) - 46px); }
+}

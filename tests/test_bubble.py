@@ -71,8 +71,9 @@ try:
         except Exception: pass
     js("fabricApp.ready")
     time.sleep(0.8); shot("start_desktop.png")
-    st = js("(() => { const a = document.querySelector('.stagecol').getBoundingClientRect(), b = document.getElementById('sidecards').getBoundingClientRect(); return [a.top, a.bottom, b.top, b.bottom]; })()")
-    check(abs(st[0] - st[2]) < 2 and abs(st[1] - st[3]) < 2, f"start screen: both columns line up top and bottom {st}")
+    st = js("(() => { const a = document.querySelector('.stage').getBoundingClientRect(), b = document.getElementById('sidecards').getBoundingClientRect(), h = document.querySelector('.brand').getBoundingClientRect(); return [a.top, a.bottom, b.top, b.bottom, a.left, h.left]; })()")
+    check(abs(st[0] - st[2]) < 2 and abs(st[1] - st[3]) < 2, f"start screen: main box and right column line up top and bottom {st[:4]}")
+    check(abs(st[4] - st[5]) < 2, f"header lines up with the content (box left {st[4]:.0f}, logo left {st[5]:.0f})")
     # 1. on by default: a small bubble on the page edge; the switch is in Settings
     check(js("!!document.querySelector('.fbub') && !document.querySelector('.fbub').hidden"), "bubble on the page by default")
     check(js("document.getElementById('bubbleOn').checked"), "Settings switch is on")

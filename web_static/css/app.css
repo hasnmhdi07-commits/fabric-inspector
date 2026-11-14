@@ -386,7 +386,9 @@ body.pipbody[data-view="bubble"] { display: grid; place-items: center; min-heigh
   #scr-scan[data-state=photo] .stagecol { height: var(--colh); grid-template-rows: minmax(0, 1fr) auto auto; }
   #scr-scan[data-state=photo] .stage { display: grid; min-height: 0; }
   #scr-scan[data-state=photo] .photo { height: 100%; }
-  #results:not([hidden]) { position: sticky; top: 76px; height: var(--colh); grid-template-rows: auto minmax(0, 1fr) auto auto; align-content: stretch; }
+  #results:not([hidden]) { position: sticky; top: 76px; height: var(--colh); grid-template-rows: auto auto minmax(0, 1fr) auto auto; align-content: stretch; row-gap: 0; }
+  #results > * { margin-bottom: 10px; } #results > #meta { margin-bottom: 0; }
+  #verdict { grid-row: 1; } #confWarn { grid-row: 2; } #results .report { grid-row: 3; } #results .actions { grid-row: 4; } #meta { grid-row: 5; }
   #results .report { overflow-y: auto; overscroll-behavior: contain; align-content: start; grid-auto-rows: max-content; padding: 2px 6px 12px 2px; margin-right: -6px;
                      scrollbar-width: thin; scrollbar-color: var(--line-2) transparent;
                      -webkit-mask-image: linear-gradient(#000 calc(100% - 22px), transparent); mask-image: linear-gradient(#000 calc(100% - 22px), transparent); }
@@ -424,3 +426,7 @@ body.pipbody[data-view="bubble"] { display: grid; place-items: center; min-heigh
   #scr-scan .checks { min-height: 36px; flex-wrap: nowrap; }
   #scr-scan[data-state=empty] #sidecards { height: calc(var(--colh) - 46px); }
 }
+
+.confwarn { display: flex; gap: 10px; align-items: center; margin: 0; padding: 10px 12px; border-radius: 12px; background: #fdf3dc; border: 1px solid #efd28a; color: #6b4b06; font-size: 13.5px; }
+.confwarn span { flex: 1; }
+.confwarn .btn { flex: none; }

@@ -143,6 +143,24 @@ try:
     check(js("fabricApp.bubble().state") == "off" and js("!fabricApp.bubble().stream"), "Turn off stops the bubble and the screen share")
     check(not js("document.getElementById('bubbleOn').checked"), "Settings switch follows Turn off")
 
+    # 6. a high detection threshold hides defects: the result warns and offers the default
+    js("document.getElementById('conf').value = 0.89; document.getElementById('conf').dispatchEvent(new Event('input')); document.querySelector('.example[data-src*=stain]').click(); true")
+    for _ in range(100):
+        time.sleep(0.2)
+        if js("!document.getElementById('results').hidden && !fabricApp.busy()"): break
+    time.sleep(0.5)
+    n_high = js("document.querySelectorAll('#boxes .box').length")
+    check(js("!document.getElementById('confWarn').hidden"), f"warning shown at confidence 0.89 ({n_high} boxes)")
+    x, y = center("#confReset"); click(x, y)
+    for _ in range(100):
+        time.sleep(0.2)
+        if not js("fabricApp.busy()") and js("document.querySelectorAll('#boxes .box').length") > n_high: break
+    time.sleep(0.5)
+    n_def = js("document.querySelectorAll('#boxes .box').length")
+    check(js("document.getElementById('confWarn').hidden") and js("+document.getElementById('conf').value") == 0.23 and n_def > n_high,
+          f"'Use 0.23' restores the default and the defects ({n_high} -> {n_def} boxes)")
+    shot("conf_reset.png")
+
     # 6. phone width: card layout, bubble does not cover the tab bar
     cdp("Emulation.setDeviceMetricsOverride", width=390, height=844, deviceScaleFactor=2, mobile=True)
     js("fabricApp.bubble().start(); true"); time.sleep(0.6)

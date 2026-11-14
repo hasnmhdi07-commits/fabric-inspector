@@ -6,7 +6,7 @@ import { analyseShade } from "./shade.js";
 import { analyseSkewBow } from "./skew.js";
 import { loadKB, assess, verdictHtml, reportHtml, reportText, SEVERITY_ORDER, SEV_COLOR } from "./kb.js";
 import { photoProblem, makeVerdict, SEV_LABEL } from "./verdict.js";
-import { limitSize, toCanvas } from "./imgutil.js";
+import { limitSize, toCanvas, placeLabel } from "./imgutil.js";
 import { Camera } from "./camera.js";
 import { listScans, getScan, addScan, deleteScan, clearScans } from "./store.js";
 import { Bubble, canFloat, canCapture } from "./bubble.js";
@@ -75,14 +75,16 @@ function renderDefects(img, items) {
   const cv = toCanvas(img), g = cv.getContext("2d"), m = Math.max(img.width, img.height);
   const lw = Math.max(2, Math.round(m / 400)), fs = Math.max(12, Math.round(m / 55));
   g.font = `600 ${fs}px system-ui, sans-serif`; g.textBaseline = "bottom";
-  for (const r of items) {
-    if (!r.box) continue;
-    const [x1, y1, x2, y2] = r.box, col = CLASS_COLOR[r.defect] || "#fff";
-    g.strokeStyle = col; g.lineWidth = lw; g.strokeRect(x1, y1, x2 - x1, y2 - y1);
-    const label = `${r.index} ${r.defect} ${(r.confidence * 100).toFixed(0)}%`, tw = g.measureText(label).width;
-    const ty = y1 - fs - 6 > 0 ? y1 - 2 : y2 + fs + 6;
-    g.fillStyle = col; g.fillRect(x1, ty - fs - 4, tw + 8, fs + 6);
-    g.fillStyle = "#fff"; g.fillText(label, x1 + 4, ty);
+  const found = items.filter((r) => r.box), placed = [];
+  for (const r of found) {
+    const [x1, y1, x2, y2] = r.box;
+    g.strokeStyle = CLASS_COLOR[r.defect] || "#fff"; g.lineWidth = lw; g.strokeRect(x1, y1, x2 - x1, y2 - y1);
+  }
+  for (const r of found) {                                // labels after all boxes, never on top of each other
+    const col = CLASS_COLOR[r.defect] || "#fff", label = `${r.index} ${r.defect} ${(r.confidence * 100).toFixed(0)}%`;
+    const tw = g.measureText(label).width + 8, th = fs + 6, [lx, ly] = placeLabel(r.box, tw, th, img.width, img.height, placed);
+    g.fillStyle = col; g.fillRect(lx, ly, tw, th);
+    g.fillStyle = "#fff"; g.fillText(label, lx + 4, ly + th - 2);
   }
   return cv;
 }
@@ -272,6 +274,9 @@ function showReport() {
     boxes.appendChild(d);
   });
   $("report").innerHTML = reportHtml(rep);
+  const conf = +$("conf").value, warn = !rep.when && settings().doDefects && conf > 0.5;    // a high threshold hides most defects
+  $("confWarn").hidden = !warn;
+  if (warn) $("confWarn").firstChild.textContent = `Detection confidence is set to ${conf.toFixed(2)} (default 0.23), so defects the AI is less sure about are hidden.`;
   const shownAt = performance.now();      // the first card opens by itself: that must not dim the other boxes
   for (const f of $("report").querySelectorAll(".finding")) f.addEventListener("toggle", () => { if (f.open && performance.now() - shownAt > 400) highlight(+f.dataset.i, false); });
   const [w, h] = rep.imageSize;
@@ -559,6 +564,7 @@ function wireUI() {
   $("camTorch").onclick = async () => { try { $("camTorch").classList.toggle("on", await camera.toggleTorch()); } catch { toast("The torch is not available."); } };
   document.addEventListener("visibilitychange", () => { if (document.hidden) closeCamera(); });
 
+  $("confReset").onclick = () => { $("conf").value = DEFAULTS.conf; saveSettings(); toast("Detection confidence is back to 0.23."); if (image && report) run(); };
   $("btnNew").onclick = newScan; $("btnShare").onclick = share; $("download").onclick = download;
   wireSelect();
 

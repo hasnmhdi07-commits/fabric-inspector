@@ -6,6 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 import { verdictHtml, reportHtml } from "../web_static/js/kb.js";
+import { placeLabel } from "../web_static/js/imgutil.js";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const CSS = readFileSync(path.resolve(HERE, "..", "web_static", "css", "app.css"), "utf8");
@@ -31,15 +32,19 @@ export async function resultPage(rep, totalMs) {
   const f = Math.min(1, PAGE_MAX / Math.max(W, H));
   const jpg = await sharp(Buffer.from(img.data.buffer, img.data.byteOffset, img.data.length), { raw: { width: W, height: H, channels: 4 } })
     .removeAlpha().resize(Math.round(W * f), Math.round(H * f)).jpeg({ quality: 78 }).toBuffer();
-  const lw = Math.max(2, Math.round(Math.max(W, H) / 300)), fs = Math.max(12, Math.round(Math.max(W, H) / 45));
-  const boxes = rep.items.filter((r) => r.box).map((r) => {
+  const lw = Math.max(2, Math.round(Math.max(W, H) / 300)), fs = Math.max(12, Math.round(Math.max(W, H) / 60));
+  const placed = [], found = rep.items.filter((r) => r.box);
+  const rects = found.map((r) => {
     const [x1, y1, x2, y2] = r.box, col = CLASS_COLOR[r.defect] || "#fff";
-    const label = `${r.index} ${r.defect} ${(r.confidence * 100).toFixed(0)}%`, tw = label.length * fs * 0.56 + 8;
-    const ty = y1 - fs - 6 > 0 ? y1 : Math.min(H, y2 + fs + 6);
-    return `<rect x="${x1.toFixed(1)}" y="${y1.toFixed(1)}" width="${(x2 - x1).toFixed(1)}" height="${(y2 - y1).toFixed(1)}" fill="none" stroke="${col}" stroke-width="${lw}"/>` +
-      `<rect x="${x1.toFixed(1)}" y="${(ty - fs - 6).toFixed(1)}" width="${tw.toFixed(1)}" height="${fs + 6}" fill="${col}"/>` +
-      `<text x="${(x1 + 4).toFixed(1)}" y="${(ty - 5).toFixed(1)}" font-size="${fs}" font-family="system-ui,sans-serif" font-weight="600" fill="#fff">${esc(label)}</text>`;
+    return `<rect x="${x1.toFixed(1)}" y="${y1.toFixed(1)}" width="${(x2 - x1).toFixed(1)}" height="${(y2 - y1).toFixed(1)}" fill="none" stroke="${col}" stroke-width="${lw}"/>`;
   }).join("");
+  const labels = found.map((r) => {                       // drawn after all boxes; never on top of each other
+    const col = CLASS_COLOR[r.defect] || "#fff", label = `${r.index} ${r.defect} ${(r.confidence * 100).toFixed(0)}%`;
+    const tw = label.length * fs * 0.56 + 8, th = fs + 6, [lx, ly] = placeLabel(r.box, tw, th, W, H, placed);
+    return `<rect x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" width="${tw.toFixed(1)}" height="${th}" rx="${(fs / 5).toFixed(1)}" fill="${col}"/>` +
+      `<text x="${(lx + 4).toFixed(1)}" y="${(ly + th - 5).toFixed(1)}" font-size="${fs}" font-family="system-ui,sans-serif" font-weight="600" fill="#fff">${esc(label)}</text>`;
+  }).join("");
+  const boxes = rects + labels;
   const shot = `<div class="shot"><img alt="Analysed photo" src="data:image/jpeg;base64,${jpg.toString("base64")}">` +
     `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">${boxes}</svg></div>`;
   const foot = `<p class="mut">Analysed in ${(totalMs / 1000).toFixed(1)} s on the server. The photo was not stored.</p>`;

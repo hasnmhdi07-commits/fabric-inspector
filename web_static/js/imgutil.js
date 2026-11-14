@@ -98,3 +98,16 @@ export function toCanvas(img) {
   cv.getContext("2d").putImageData(new ImageData(new Uint8ClampedArray(img.data), img.width, img.height), 0, 0);
   return cv;
 }
+
+/** Where to put a box label (w x h) so it stays inside the image and does not cover labels already placed.
+ *  Tries: above the box, below it, inside its top-left corner, above / inside at the right edge.
+ *  placed: array of earlier label rectangles [x, y, w, h] (the new one is added). Returns [x, y] (top-left). */
+export function placeLabel([x1, y1, x2, y2], w, h, W, H, placed) {
+  const fitX = (x) => Math.max(0, Math.min(W - w, x));
+  const tries = [[x1, y1 - h], [x1, y2], [x1, y1], [x2 - w, y1 - h], [x2 - w, y1], [x2 - w, y2]]
+    .map(([x, y]) => [fitX(x), y]).filter(([, y]) => y >= 0 && y + h <= H);
+  const free = ([x, y]) => placed.every(([px, py, pw, ph]) => x >= px + pw || x + w <= px || y >= py + ph || y + h <= py);
+  const spot = tries.find(free) || tries[0] || [fitX(x1), Math.max(0, Math.min(H - h, y1))];
+  placed.push([spot[0], spot[1], w, h]);
+  return spot;
+}

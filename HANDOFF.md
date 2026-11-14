@@ -75,31 +75,28 @@ Fixes over v3: line-scan strips cut into full-resolution tiles, neps and thick y
 dropped before), knots merged into `slub_neps`, at most 4 copies per photo. No v3 test or validation photo
 is in v4 training.
 
-## 4. Model status (the weak point)
+## 4. Model status
 
-- Current model in the app: an earlier run exported to `web_static/model/best.onnx` (10.2 MB, 640 px).
-- Quality gate: test mAP@0.5 ≥ 0.60. Not met yet (R1 0.47 / 0.53, R1v2 0.52).
-- The model misses defects on real photos. This is a model problem, not an app problem.
-- R2 (YOLO11s, 640, on v3) got stuck at epoch 33 on Colab.
-
-**Next training run (user does this on Colab):**
-
-1. Upload `C:\thesis\upload\fabric4_v4.zip` to Google Drive `MyDrive/thesis/`.
-2. Upload `notebooks/train_colab.ipynb` to Colab. It is already set to `DATASET = 'fabric4_v4'`, `RUN = 'R5'`
-   (YOLO11n at 960 px, saved as `R5v4`).
-3. Run all cells, then the evaluation cell. If Colab disconnects, use the resume cell.
-4. Bring back `R5v4/weights/best.pt`, `R5v4/results.csv`, `test_results_fabric4_v4.csv`.
-5. If R5 falls short, run R4 (YOLO11s at 960) as the accuracy reference.
+- **Current model: R5v4** (YOLO11n, 960 px, 80 epochs on dataset v4), file `models/bestr5.pt`,
+  exported to `web_static/model/best.onnx` and `models/best.onnx` at 960 px (10.9 MB).
+- **Quality gate met:** test mAP@0.5 = 0.619 on the v4 test set (gate 0.60). Per class AP50: hole_tear 0.768,
+  stain 0.725, slub_neps 0.464, broken_pick_end 0.518; precision 0.648, recall 0.587
+  (`results/test_results_fabric4_v4.csv`, `results/colab_test_results.csv`). Best val mAP50 0.682 near epoch 70.
+- Earlier runs: R1 0.469 (v1 test), R1v2 0.522 (v2 test). The test sets differ per dataset version; for a fair
+  comparison in the thesis, also evaluate R5v4 on the v2 test set.
+- Speed (WebAssembly, 1 thread, this PC): 0.58 s per photo at 960 px vs 0.25 s for the old 640 px model.
+- The input size is read from the model file everywhere (browser/server: `modelSize()` in `detector.js` reads the
+  Ultralytics `imgsz` metadata; Windows app: the ONNX input shape). `build_static.py` exports at the training size.
+- Possible next runs: R4 (YOLO11s at 960) as the accuracy reference; own fabric photos for training/testing.
 
 **When a new `best.pt` arrives:**
 
 ```
-venv\Scripts\python.exe scripts\build_static.py path\to\best.pt
+venv\Scripts\python.exe scripts\build_static.py path\to\best.pt        # exports at its training size
 ```
 
-That exports to ONNX and rebuilds `web_static`. Note: the export is fixed at 640 px
-(`imgsz=640` in `build_static.py`, `S = 640` in `web_static/js/detector.js`). A model trained at 960 needs
-both changed to use its full resolution. Then run the tests and deploy (section 5).
+Then run the tests and deploy (section 5). The headless-Edge test profile keeps an offline copy: delete its
+`edge_cdp` folder (path in `tests/test_static.py`) before the parity test after a model change.
 
 ## 5. How to build, test and deploy
 

@@ -1,6 +1,6 @@
 """Build the in-browser web app folder (web_static/): knowledge base JSON, model, ONNX Runtime Web files,
 icons, PWA manifest, offline service worker, Hugging Face static-Space README.
-Usage: python scripts\\build_static.py [path\\to\\model.pt]
+Usage: python scripts\\build_static.py [path\\to\\model.pt [imgsz]]   (imgsz default: the size it was trained at)
 """
 import hashlib, json, shutil, sys, urllib.request
 from pathlib import Path
@@ -16,10 +16,13 @@ ORT_FILES = ["ort.wasm.min.mjs", "ort-wasm-simd-threaded.mjs", "ort-wasm-simd-th
 # 1. model (re-export only if a .pt is given)
 if len(sys.argv) > 1:
     from ultralytics import YOLO
-    p = YOLO(sys.argv[1]).export(format="onnx", imgsz=640, opset=17, simplify=True, dynamic=False)
+    m = YOLO(sys.argv[1])
+    size = int(sys.argv[2]) if len(sys.argv) > 2 else int(m.ckpt.get("train_args", {}).get("imgsz", 640))   # the training size
+    p = m.export(format="onnx", imgsz=size, opset=17, simplify=True, dynamic=False)
     (OUT / "model").mkdir(parents=True, exist_ok=True)
     shutil.copy(p, OUT / "model" / "best.onnx")
-    print("model exported from", sys.argv[1])
+    shutil.copy(p, ROOT / "models" / "best.onnx")            # the Windows app uses the same file
+    print(f"model exported from {sys.argv[1]} at {size} px")
 
 # 2. knowledge base as JSON (single source of truth stays the YAML file)
 kb = yaml.safe_load((ROOT / "src" / "knowledge" / "knowledge_base.yaml").read_text(encoding="utf-8"))

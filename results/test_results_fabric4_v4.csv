@@ -1,0 +1,2 @@
+run,test_set,precision,recall,mAP50,mAP50_95,AP50_hole_tear,AP50_stain,AP50_slub_neps,AP50_broken_pick_end,ms_per_image
+R5v4,fabric4_v4,0.648,0.587,0.619,0.329,0.768,0.725,0.464,0.518,8.657

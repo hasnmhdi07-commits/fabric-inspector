@@ -7,7 +7,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import path from "node:path";
 import sharp from "sharp";
 
-import { Detector } from "../web_static/js/detector.js";
+import { Detector, modelSize } from "../web_static/js/detector.js";
 import { analyseShade } from "../web_static/js/shade.js";
 import { analyseSkewBow } from "../web_static/js/skew.js";
 import { loadKB, assess, SEVERITY_ORDER } from "../web_static/js/kb.js";
@@ -33,7 +33,7 @@ export function getEngine() {
     await loadKB("data:application/json;base64," + kb.toString("base64"));
     const model = await readFile(path.join(STATIC, "model", "best.onnx"));
     const d = Object.create(Detector.prototype);          // same detect() code as the browser
-    d.ort = ort; d.backend = "server (WebAssembly)";
+    d.ort = ort; d.backend = "server (WebAssembly)"; d.size = modelSize(model);
     d.session = await ort.InferenceSession.create(new Uint8Array(model), { executionProviders: ["wasm"] });
     d.input = d.session.inputNames[0]; d.output = d.session.outputNames[0];
     return { detector: d, loadMs: performance.now() - t0 };

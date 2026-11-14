@@ -19,7 +19,7 @@ from src.skew.bow_skew import analyse_skew_bow
 from src.app.verdict import photo_problem, make_verdict, SEV_LABEL
 
 ROOT = Path(__file__).resolve().parents[2]
-# ONNX model: the same file and the same 640x640 letterbox as the browser and the server -> same result everywhere
+# ONNX model: the same file and the same letterbox size as the browser and the server -> same result everywhere
 # (the .pt model pads non-square photos differently and can give slightly different boxes)
 DEFAULT_MODEL = ROOT / "models" / "best.onnx"
 CLASSES = ["hole_tear", "stain", "slub_neps", "broken_pick_end"]
@@ -32,7 +32,7 @@ CLASS_COLORS = {"hole_tear": (214, 120, 42), "stain": (52, 104, 235),
 class Settings:
     conf: float = 0.23            # best mean-F1 threshold found on the test set (R1)
     iou: float = 0.5
-    imgsz: int = 640
+    imgsz: int = 0                # 0 = the size the model was exported at (640 or 960)
     px_per_mm: float = 0.0        # 0 = unknown scale (relative-size severity fallback)
     shade_tol: float = 1.0        # dE CMC(2:1)
     skew_limit: float = 3.0
@@ -69,6 +69,10 @@ class Analyzer:
         from ultralytics import YOLO          # imported here so the GUI starts fast
         self.model_path = Path(model_path)
         self.model = YOLO(str(self.model_path))
+        self.imgsz = 640
+        if self.model_path.suffix == ".onnx":                 # fixed-size export: use its input size
+            import onnxruntime as ort
+            self.imgsz = int(ort.InferenceSession(str(self.model_path), providers=["CPUExecutionProvider"]).get_inputs()[0].shape[2])
         self.kb = load_kb()
         self.model.predict(np.zeros((64, 64, 3), np.uint8), verbose=False)   # warm-up
 
@@ -82,7 +86,7 @@ class Analyzer:
 
         if s.do_defects:
             t0 = time.perf_counter()
-            res = self.model.predict(img_bgr, conf=s.conf, iou=s.iou, imgsz=s.imgsz, verbose=False)[0]
+            res = self.model.predict(img_bgr, conf=s.conf, iou=s.iou, imgsz=s.imgsz or self.imgsz, verbose=False)[0]
             t["detection"] = (time.perf_counter() - t0) * 1000
             names = res.names
             for b in res.boxes:

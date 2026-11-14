@@ -2,3 +2,4 @@ run,train_data,test_set,precision,recall,mAP50,mAP50_95,AP50_hole_tear,AP50_stai
 R1,v1,v1 test (429),0.577,0.455,0.469,0.26,0.64,0.606,0.213,0.417,4.582,Colab T4
 R1,v1,v2 test (386),0.597,0.510,0.528,0.292,0.715,0.655,0.286,0.458,,local CPU eval (same settings)
 R1v2,v2,v2 test (386),0.622,0.472,0.522,0.289,0.689,0.647,0.286,0.465,5.276,Colab T4
+R5v4,v4,v4 test (402),0.648,0.587,0.619,0.329,0.768,0.725,0.464,0.518,8.657,Colab T4

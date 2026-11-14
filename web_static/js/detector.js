@@ -1,9 +1,17 @@
 // YOLO11 detector running in the browser with ONNX Runtime Web (WebAssembly).
-// Pre/post-processing replicates Ultralytics: letterbox to 640, decode [1, 4+nc, 8400], class-wise NMS.
+// Pre/post-processing replicates Ultralytics: letterbox to the model size (640 or 960, read from the model file),
+// decode [1, 4+nc, N], class-wise NMS.
 import { resizeBilinearRGB } from "./imgutil.js";
 
 export const CLASSES = ["hole_tear", "stain", "slub_neps", "broken_pick_end"];
-const S = 640;
+
+/** Input size of an Ultralytics ONNX export: its metadata holds e.g. imgsz "[960, 960]". 640 if not found. */
+export function modelSize(bytes) {
+  const b = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+  const head = new TextDecoder("latin1").decode(b.subarray(Math.max(0, b.length - 4096)));   // metadata is at the end
+  const m = /imgsz[^\[]{0,8}\[(\d+), ?(\d+)\]/.exec(head) || /imgsz[^\[]{0,8}\[(\d+), ?(\d+)\]/.exec(new TextDecoder("latin1").decode(b.subarray(0, 4096)));
+  return m ? +m[1] : 640;
+}
 
 // WebAssembly SIMD support test (same bytes as the wasm-feature-detect library).
 // SIMD exists in Chrome/Edge 91+, Firefox 89+, Safari 16.4+ (iOS 16.4+). Older devices get a compatible engine.
@@ -28,6 +36,7 @@ export class Detector {
     const d = new Detector();
     const { ort, backend } = await loadOrt();
     d.ort = ort; d.backend = backend;
+    d.size = typeof modelUrl === "string" ? 640 : modelSize(modelUrl);
     d.session = await ort.InferenceSession.create(modelUrl, { executionProviders: ["wasm"] });
     d.input = d.session.inputNames[0];
     d.output = d.session.outputNames[0];
@@ -36,7 +45,7 @@ export class Detector {
 
   /** img: {data: RGBA, width, height}. Returns [{cls, name, conf, box:[x1,y1,x2,y2]}] in image pixels. */
   async detect(img, { conf = 0.23, iou = 0.5, maxDet = 300 } = {}) {
-    const { width: w, height: h } = img;
+    const { width: w, height: h } = img, S = this.size || 640;
     // letterbox (same rounding as ultralytics LetterBox(auto=False))
     const r = Math.min(S / h, S / w);
     const nw = Math.round(w * r), nh = Math.round(h * r);
